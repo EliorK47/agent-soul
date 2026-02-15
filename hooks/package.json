@@ -1,0 +1,19 @@
+{
+  "name": "cursor-hooks",
+  "version": "1.0.0",
+  "description": "Cursor hook scripts for session management and workflow automation",
+  "type": "module",
+  "scripts": {
+    "test": "bun test",
+    "check": "bunx tsc --noEmit",
+    "typecheck": "bunx tsc --noEmit"
+  },
+  "keywords": ["cursor", "hooks", "session-management"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/node": "latest",
+    "typescript": "latest"
+  }
+}

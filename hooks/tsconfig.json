@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    // Environment setup
+    "lib": ["ESNext"],
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "types": ["bun"],
+
+    // Strict type checking
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+
+    // Don't emit output files - type checking only!
+    "noEmit": true,
+
+    // Performance optimizations
+    "skipLibCheck": true,
+    "incremental": true,
+    "isolatedModules": true
+  },
+  "include": [
+    "scripts/**/*.ts",
+    "lib/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "backup",
+    "*.js"
+  ]
+}

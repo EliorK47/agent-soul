@@ -1,0 +1,156 @@
+{
+  "version": 1,
+  "hooks": {
+    // beforeSubmitPrompt: Called right after user hits send but before backend request. Can prevent submission.
+    // Input: { prompt, attachments }
+    // Output: { continue: bool, user_message?: string }
+    // Exit 2 blocks submission
+    "beforeSubmitPrompt": [],
+
+    // preToolUse: Called before any tool execution (Shell, Read, Write, MCP, Task, etc.). Can block or modify.
+    // Input: { tool_name, tool_input, tool_use_id, cwd, model, agent_message }
+    // Output: { decision: "allow"|"deny", reason?: string, updated_input?: object }
+    // Matcher: Filter by tool name (e.g., "Shell", "Write", "Read")
+    // Exit 2 blocks tool execution
+    "preToolUse": [
+      {
+        "matcher": "Write",
+        "command": "bun hooks/scripts/block-md-files.ts",
+        "description": "Block creation of random .md files - keeps docs consolidated"
+      }
+    ],
+
+    // postToolUse: Called after successful tool execution. Useful for auditing and analytics.
+    // Input: { tool_name, tool_input, tool_output, tool_use_id, cwd, duration, model }
+    // Output: { updated_mcp_tool_output?: object } (MCP tools only)
+    // Exit codes ignored (observational only)
+    "postToolUse": [],
+
+    // postToolUseFailure: Called when a tool fails, times out, or is denied. Useful for error tracking.
+    // Input: { tool_name, tool_input, tool_use_id, cwd, error_message, failure_type, duration, is_interrupt }
+    // Output: None currently supported
+    // Exit codes ignored (observational only)
+    "postToolUseFailure": [],
+
+    // beforeShellExecution: Called before shell commands execute. Return permission decision.
+    // Input: { command, cwd, timeout }
+    // Output: { permission: "allow"|"deny"|"ask", user_message?: string, agent_message?: string }
+    // Matcher: Filter by command text (e.g., "git push", "curl|wget")
+    // Exit 2 blocks execution
+    "beforeShellExecution": [],
+
+    // afterShellExecution: Fires after shell command executes. Useful for auditing or collecting metrics.
+    // Input: { command, output, duration }
+    // Output: None currently supported
+    // Exit codes ignored (observational only)
+    "afterShellExecution": [],
+
+    // beforeMCPExecution: Called before MCP tool execution. Return permission decision. FAIL-CLOSED (errors block execution).
+    // Input: { tool_name, tool_input, url|command }
+    // Output: { permission: "allow"|"deny"|"ask", user_message?: string, agent_message?: string }
+    // Exit 2 blocks execution
+    "beforeMCPExecution": [],
+
+    // afterMCPExecution: Fires after MCP tool executes. Includes tool input and result.
+    // Input: { tool_name, tool_input, result_json, duration }
+    // Output: None currently supported
+    // Exit codes ignored (observational only)
+    "afterMCPExecution": [],
+
+    // beforeReadFile: Called before Agent reads a file. Use for access control. FAIL-CLOSED (errors block read).
+    // Input: { file_path, content, attachments }
+    // Output: { permission: "allow"|"deny", user_message?: string }
+    // Exit 2 blocks file read
+    "beforeReadFile": [],
+
+    // afterFileEdit: Fires after Agent edits a file. Useful for formatters or accounting.
+    // Input: { file_path, edits: [{ old_string, new_string }] }
+    // Output: None currently supported
+    // Exit codes ignored (observational only)
+    "afterFileEdit": [],
+
+    // beforeTabFileRead: Called before Tab reads a file. Enable redaction or access control for Tab.
+    // Input: { file_path, content } (no attachments field)
+    // Output: { permission: "allow"|"deny" }
+    // Exit 2 blocks file read
+    "beforeTabFileRead": [],
+
+    // afterTabFileEdit: Called after Tab edits a file. Useful for formatters or auditing Tab edits.
+    // Input: { file_path, edits: [{ old_string, new_string, range, old_line, new_line }] }
+    // Output: None currently supported
+    // Exit codes ignored (observational only)
+    "afterTabFileEdit": [],
+
+    // afterAgentResponse: Called after the agent completes an assistant message.
+    // Input: { text }
+    // Output: None currently supported
+    // Exit codes ignored (observational only)
+    "afterAgentResponse": [],
+
+    // afterAgentThought: Called after the agent completes a thinking block. Observes reasoning process.
+    // Input: { text, duration_ms? }
+    // Output: None currently supported
+    // Exit codes ignored (observational only)
+    "afterAgentThought": [],
+
+      // sessionStart: Called when a new conversation is created. Set up env vars or inject context.
+      // Input: { session_id, is_background_agent, composer_mode? }
+      // Output: { env?: object, additional_context?: string, continue?: bool, user_message?: string }
+      // Exit 2 blocks session creation
+      "sessionStart": [
+        {
+          "command": "bun hooks/scripts/session-start.ts",
+          "description": "Initialize session - create template and load previous context"
+        }
+      ],
+
+      // sessionEnd: Called when conversation ends. FIRE-AND-FORGET for logging/cleanup (output ignored).
+      // Input: { session_id, reason, duration_ms, is_background_agent, final_status, error_message? }
+      // Output: None (fire-and-forget)
+      // Exit codes ignored
+      "sessionEnd": [
+        {
+          "command": "bun hooks/scripts/session-end.ts",
+          "description": "Cleanup unused session templates and finalize active sessions"
+        }
+      ],
+
+    // preCompact: Called before context compaction. Observational hook for logging/notification.
+    // Input: { trigger, context_usage_percent, context_tokens, context_window_size, message_count, messages_to_compact, is_first_compaction }
+    // Output: { user_message?: string }
+    // Exit codes ignored (observational only)
+    "preCompact": [
+      {
+        "command": "bun hooks/scripts/pre-compact.ts",
+        "description": "Create compaction flag for stop hook detection"
+      }
+    ],
+
+    // stop: Called when agent loop ends. Can auto-submit follow-up to continue iteration.
+    // Input: { status, loop_count }
+    // Output: { followup_message?: string }
+    // Loop limit: 5 (per-script configurable via loop_limit)
+    // Exit codes ignored
+    "stop": [
+      {
+        "command": "bun hooks/scripts/suggest-compact.ts",
+        "description": "Suggest manual compaction at logical intervals",
+        "loop_limit": 1
+      }
+    ],
+
+    // subagentStart: Called before spawning a subagent (Task tool). Can allow or deny.
+    // Input: { subagent_type, prompt, model }
+    // Output: { decision: "allow"|"deny", reason?: string }
+    // Matcher: Filter by subagent type (e.g., "explore", "shell", "generalPurpose")
+    // Exit 2 blocks subagent creation
+    "subagentStart": [],
+
+    // subagentStop: Called when subagent completes or errors. Can trigger follow-up actions.
+    // Input: { subagent_type, status, result, duration, agent_transcript_path }
+    // Output: { followup_message?: string }
+    // Loop limit: 5 (per-script configurable via loop_limit)
+    // Exit codes ignored
+    "subagentStop": []
+  }
+}
