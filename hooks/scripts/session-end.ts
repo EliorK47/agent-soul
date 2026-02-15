@@ -7,8 +7,14 @@
  * 2. Keep if session was actively used
  */
 
-import { normalize } from 'path';
-import { findSession, readSession, isTemplate, deleteSession, renameSessionFromTitle } from '../lib/session-manager';
+import { normalize } from 'node:path';
+import {
+  deleteSession,
+  findSession,
+  isTemplate,
+  readSession,
+  renameSessionFromTitle,
+} from '../lib/session-manager';
 import { getProjectSessionsDir } from '../lib/utils';
 
 interface SessionEndInput {
@@ -52,7 +58,10 @@ async function main() {
   process.exit(0);
 }
 
-main().catch(err => {
-  console.error('[SessionEnd] Error:', err instanceof Error ? err.message : String(err));
+main().catch((err) => {
+  console.error(
+    '[SessionEnd] Error:',
+    err instanceof Error ? err.message : String(err),
+  );
   process.exit(0);
 });

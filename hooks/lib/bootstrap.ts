@@ -5,7 +5,7 @@
  * Safe to call every session -- only writes if files are missing.
  */
 
-import { join } from 'path';
+import { join } from 'node:path';
 import { getHomeDir } from './utils';
 
 // --- Types ---
@@ -109,13 +109,13 @@ export async function ensureWorkspaceSetup(
   await Bun.write(join(memoryDir, '.keep'), '');
 
   // Ensure starter files (only if missing)
-  if (!await Bun.file(memoryFile).exists()) {
+  if (!(await Bun.file(memoryFile).exists())) {
     await Bun.write(memoryFile, MEMORY_TEMPLATE);
   }
-  if (!await Bun.file(soulFile).exists()) {
+  if (!(await Bun.file(soulFile).exists())) {
     await Bun.write(soulFile, SOUL_TEMPLATE);
   }
-  if (!await Bun.file(userFile).exists()) {
+  if (!(await Bun.file(userFile).exists())) {
     await Bun.write(userFile, USER_TEMPLATE);
   }
 

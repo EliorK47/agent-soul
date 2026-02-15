@@ -3,8 +3,8 @@
  * Works on Windows, macOS, and Linux
  */
 
-import { join, dirname } from 'path';
-import { homedir, tmpdir, platform } from 'os';
+import { homedir, platform, tmpdir } from 'node:os';
+import { dirname, join } from 'node:path';
 import { $ } from 'bun';
 
 // Platform detection
@@ -50,10 +50,11 @@ export function getTempDir(): string {
  * Cross-platform: handles Windows drive letters and Unix absolute paths.
  */
 export function deriveProjectId(workspaceRoot: string): string {
-  const { sep, parse } = require('path') as typeof import('path');
+  const { sep, parse } = require('node:path') as typeof import('path');
   const userHome = getHomeDir();
   const globalCursorPath = userHome ? join(userHome, '.cursor') : '';
-  const isGlobalCursorFolder = globalCursorPath &&
+  const isGlobalCursorFolder =
+    globalCursorPath &&
     workspaceRoot.toLowerCase() === globalCursorPath.toLowerCase();
 
   const parsed = parse(workspaceRoot);
@@ -61,10 +62,11 @@ export function deriveProjectId(workspaceRoot: string): string {
   if (parsed.root.match(/^[A-Za-z]:\\/)) {
     // Windows: C:\Users\Name\project -> c-Users-Name-project
     const drive = parsed.root.charAt(0).toLowerCase();
-    const restPath = workspaceRoot.substring(parsed.root.length)
+    const restPath = workspaceRoot
+      .substring(parsed.root.length)
       .split(sep)
-      .map(s => s === '.cursor' && isGlobalCursorFolder ? 'cursor' : s)
-      .map(s => s.replace(/\s+/g, '-'))
+      .map((s) => (s === '.cursor' && isGlobalCursorFolder ? 'cursor' : s))
+      .map((s) => s.replace(/\s+/g, '-'))
       .join('-');
     return `${drive}-${restPath}`;
   }
@@ -73,8 +75,8 @@ export function deriveProjectId(workspaceRoot: string): string {
   return workspaceRoot
     .split(sep)
     .filter(Boolean)
-    .map(s => s === '.cursor' && isGlobalCursorFolder ? 'cursor' : s)
-    .map(s => s.replace(/\s+/g, '-'))
+    .map((s) => (s === '.cursor' && isGlobalCursorFolder ? 'cursor' : s))
+    .map((s) => s.replace(/\s+/g, '-'))
     .join('-')
     .toLowerCase();
 }
@@ -91,7 +93,7 @@ export function getProjectSessionsDir(workspaceRoot: string): string {
 
 // Ensure a directory exists (create if not)
 export async function ensureDir(dirPath: string): Promise<string> {
-  if (!await Bun.file(dirPath).exists()) {
+  if (!(await Bun.file(dirPath).exists())) {
     await Bun.write(join(dirPath, '.keep'), '');
   }
   return dirPath;
@@ -146,22 +148,24 @@ export interface FindFilesOptions {
 }
 
 // Find files matching a pattern in a directory
-export async function findFiles(dir: string, pattern: string, options: FindFilesOptions = {}): Promise<FindFileResult[]> {
+export async function findFiles(
+  dir: string,
+  pattern: string,
+  options: FindFilesOptions = {},
+): Promise<FindFileResult[]> {
   const { maxAge = null, recursive = false } = options;
   const results: FindFileResult[] = [];
 
-  if (!await Bun.file(dir).exists()) {
+  if (!(await Bun.file(dir).exists())) {
     return results;
   }
 
   // Convert simple glob pattern to Bun.glob compatible pattern
-  const globPattern = recursive
-    ? `${dir}/**/${pattern}`
-    : `${dir}/${pattern}`;
+  const globPattern = recursive ? `${dir}/**/${pattern}` : `${dir}/${pattern}`;
 
   try {
     const glob = new Bun.Glob(globPattern);
-    const fs = await import('fs/promises');
+    const fs = await import('node:fs/promises');
 
     for await (const file of glob.scan('.')) {
       const stats = await fs.stat(file);
@@ -186,12 +190,12 @@ export async function findFiles(dir: string, pattern: string, options: FindFiles
 }
 
 // Read JSON from stdin (for hook input) - Not exported, use Bun.stdin.text() instead
-export async function readStdinJson(): Promise<any> {
+export async function readStdinJson(): Promise<unknown> {
   return new Promise((resolve, reject) => {
     let data = '';
 
     process.stdin.setEncoding('utf8');
-    process.stdin.on('data', chunk => {
+    process.stdin.on('data', (chunk) => {
       data += chunk;
     });
 
@@ -236,15 +240,23 @@ export async function readFile(filePath: string): Promise<string | null> {
 }
 
 // Write a text file
-export async function writeFile(filePath: string, content: string): Promise<void> {
+export async function writeFile(
+  filePath: string,
+  content: string,
+): Promise<void> {
   await ensureDir(dirname(filePath));
   await Bun.write(filePath, content);
 }
 
 // Append to a text file
-export async function appendFile(filePath: string, content: string): Promise<void> {
+export async function appendFile(
+  filePath: string,
+  content: string,
+): Promise<void> {
   await ensureDir(dirname(filePath));
-  const existing = await Bun.file(filePath).exists() ? await Bun.file(filePath).text() : '';
+  const existing = (await Bun.file(filePath).exists())
+    ? await Bun.file(filePath).text()
+    : '';
   await Bun.write(filePath, existing + content);
 }
 
@@ -259,7 +271,7 @@ export async function commandExists(cmd: string): Promise<boolean> {
     // Add timeout to prevent hanging on Windows
     const whichPromise = Bun.which(cmd);
     const timeoutPromise = new Promise<null>((resolve) =>
-      setTimeout(() => resolve(null), 500)
+      setTimeout(() => resolve(null), 500),
     );
 
     const path = await Promise.race([whichPromise, timeoutPromise]);
@@ -275,7 +287,10 @@ export interface CommandResult {
 }
 
 // Run a command and return output
-export async function runCommand(cmd: string, options: object = {}): Promise<CommandResult> {
+export async function runCommand(
+  cmd: string,
+  _options: object = {},
+): Promise<CommandResult> {
   try {
     const result = await $`${cmd}`.nothrow();
     const output = result.text();
@@ -285,7 +300,7 @@ export async function runCommand(cmd: string, options: object = {}): Promise<Com
     } else {
       return { success: false, output: result.stderr.toString() };
     }
-  } catch (err: any) {
+  } catch (err: unknown) {
     return { success: false, output: String(err) };
   }
 }
@@ -296,8 +311,10 @@ export async function isGitRepo(): Promise<boolean> {
 }
 
 // Get git modified files
-export async function getGitModifiedFiles(patterns: string[] = []): Promise<string[]> {
-  if (!await isGitRepo()) return [];
+export async function getGitModifiedFiles(
+  patterns: string[] = [],
+): Promise<string[]> {
+  if (!(await isGitRepo())) return [];
 
   const result = await runCommand('git diff --name-only HEAD');
   if (!result.success) return [];
@@ -306,7 +323,7 @@ export async function getGitModifiedFiles(patterns: string[] = []): Promise<stri
 
   if (patterns.length > 0) {
     files = files.filter((file: string) => {
-      return patterns.some(pattern => {
+      return patterns.some((pattern) => {
         const regex = new RegExp(pattern);
         return regex.test(file);
       });
@@ -317,7 +334,11 @@ export async function getGitModifiedFiles(patterns: string[] = []): Promise<stri
 }
 
 // Replace text in a file (cross-platform sed alternative)
-export async function replaceInFile(filePath: string, search: string | RegExp, replace: string): Promise<boolean> {
+export async function replaceInFile(
+  filePath: string,
+  search: string | RegExp,
+  replace: string,
+): Promise<boolean> {
   const content = await readFile(filePath);
   if (content === null) return false;
 
@@ -327,7 +348,10 @@ export async function replaceInFile(filePath: string, search: string | RegExp, r
 }
 
 // Count occurrences of a pattern in a file
-export async function countInFile(filePath: string, pattern: string | RegExp): Promise<number> {
+export async function countInFile(
+  filePath: string,
+  pattern: string | RegExp,
+): Promise<number> {
   const content = await readFile(filePath);
   if (content === null) return 0;
 
@@ -342,7 +366,10 @@ export interface GrepResult {
 }
 
 // Search for pattern in file and return matching lines with line numbers
-export async function grepFile(filePath: string, pattern: string | RegExp): Promise<GrepResult[]> {
+export async function grepFile(
+  filePath: string,
+  pattern: string | RegExp,
+): Promise<GrepResult[]> {
   const content = await readFile(filePath);
   if (content === null) return [];
 

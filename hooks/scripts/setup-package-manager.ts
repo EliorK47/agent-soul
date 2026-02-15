@@ -13,13 +13,13 @@
  */
 
 import {
-  PACKAGE_MANAGERS,
+  detectFromLockFile,
+  detectFromPackageJson,
+  getAvailablePackageManagers,
   getPackageManager,
+  PACKAGE_MANAGERS,
   setPreferredPackageManager,
   setProjectPackageManager,
-  getAvailablePackageManagers,
-  detectFromLockFile,
-  detectFromPackageJson
 } from '../lib/package-manager';
 
 function showHelp(): void {
@@ -73,11 +73,15 @@ async function detectAndShow(): Promise<void> {
   console.log('Detection results:');
   console.log(`  From package.json: ${fromPkg || 'not specified'}`);
   console.log(`  From lock file: ${fromLock || 'not found'}`);
-  console.log(`  Environment var: ${process.env.CURSOR_PACKAGE_MANAGER || 'not set'}`);
+  console.log(
+    `  Environment var: ${process.env.CURSOR_PACKAGE_MANAGER || 'not set'}`,
+  );
   console.log('');
 
   console.log('Available package managers:');
-  for (const pmName of Object.keys(PACKAGE_MANAGERS) as Array<keyof typeof PACKAGE_MANAGERS>) {
+  for (const pmName of Object.keys(PACKAGE_MANAGERS) as Array<
+    keyof typeof PACKAGE_MANAGERS
+  >) {
     const installed = available.includes(pmName);
     const indicator = installed ? '✓' : '✗';
     const current = pmName === pm.name ? ' (current)' : '';
@@ -98,7 +102,9 @@ async function listAvailable(): Promise<void> {
 
   console.log('\nAvailable Package Managers:\n');
 
-  for (const pmName of Object.keys(PACKAGE_MANAGERS) as Array<keyof typeof PACKAGE_MANAGERS>) {
+  for (const pmName of Object.keys(PACKAGE_MANAGERS) as Array<
+    keyof typeof PACKAGE_MANAGERS
+  >) {
     const config = PACKAGE_MANAGERS[pmName];
     const installed = available.includes(pmName);
     const current = pmName === pm.name ? ' (current)' : '';

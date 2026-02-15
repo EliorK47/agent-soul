@@ -1,20 +1,6 @@
 #!/usr/bin/env bun
-/**
- * Continuous Learning - Session Evaluator
- *
- * Cross-platform (Windows, macOS, Linux)
- *
- * Runs on sessionEnd hook to extract reusable patterns from Cursor sessions
- */
 
-export {};
-
-import {
-  getSessionsDir,
-  getLearnedSkillsDir,
-  ensureDir,
-  countInFile
-} from '../lib/utils';
+import { countInFile, ensureDir, getLearnedSkillsDir } from '../lib/utils';
 
 interface SessionEndInput {
   transcript_path?: string;
@@ -27,18 +13,22 @@ interface SessionEndOutput {
 
 try {
   // Read hook input from stdin
-  const input: SessionEndInput = JSON.parse((await Bun.stdin.text()).replace(/^\uFEFF/, ''));
+  const input: SessionEndInput = JSON.parse(
+    (await Bun.stdin.text()).replace(/^\uFEFF/, ''),
+  );
   const transcriptPath = input.transcript_path;
 
   const learnedSkillsPath = await getLearnedSkillsDir();
   await ensureDir(learnedSkillsPath);
 
   // If no transcript available, exit gracefully
-  if (!transcriptPath || !await Bun.file(transcriptPath).exists()) {
-    console.log(JSON.stringify({
-      additional_context: '[ContinuousLearning] No transcript available',
-      continue: true
-    } as SessionEndOutput));
+  if (!transcriptPath || !(await Bun.file(transcriptPath).exists())) {
+    console.log(
+      JSON.stringify({
+        additional_context: '[ContinuousLearning] No transcript available',
+        continue: true,
+      } as SessionEndOutput),
+    );
     process.exit(0);
   }
 
@@ -47,10 +37,12 @@ try {
 
   // Skip short sessions (less than 10 messages)
   if (messageCount < 10) {
-    console.log(JSON.stringify({
-      additional_context: `[ContinuousLearning] Session too short (${messageCount} messages), skipping evaluation`,
-      continue: true
-    } as SessionEndOutput));
+    console.log(
+      JSON.stringify({
+        additional_context: `[ContinuousLearning] Session too short (${messageCount} messages), skipping evaluation`,
+        continue: true,
+      } as SessionEndOutput),
+    );
     process.exit(0);
   }
 
@@ -67,17 +59,21 @@ Consider creating a skill file in: ${learnedSkillsPath}
 
 Skill files should be markdown (.md) with clear examples and use cases.`;
 
-  console.log(JSON.stringify({
-    additional_context: message,
-    continue: true
-  } as SessionEndOutput));
+  console.log(
+    JSON.stringify({
+      additional_context: message,
+      continue: true,
+    } as SessionEndOutput),
+  );
 
   process.exit(0);
 } catch (err) {
   // On error, still output valid JSON
-  console.log(JSON.stringify({
-    additional_context: `[ContinuousLearning] Error: ${err instanceof Error ? err.message : String(err)}`,
-    continue: true
-  } as SessionEndOutput));
+  console.log(
+    JSON.stringify({
+      additional_context: `[ContinuousLearning] Error: ${err instanceof Error ? err.message : String(err)}`,
+      continue: true,
+    } as SessionEndOutput),
+  );
   process.exit(0);
 }

@@ -9,8 +9,8 @@
  * - Metadata extraction from markdown
  */
 
-import * as fs from 'fs/promises';
-import { dirname, join } from 'path';
+import * as fs from 'node:fs/promises';
+import { dirname, join } from 'node:path';
 
 // --- Types ---
 
@@ -66,13 +66,16 @@ export interface ListSessionsOptions {
  *
  * The UUID is always the last 36 chars before .tmp (8-4-4-4-12 format).
  */
-const SESSION_FILENAME_REGEX = /^(\d{4}-\d{2}-\d{2})-(.+)-([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})\.tmp$/;
+const SESSION_FILENAME_REGEX =
+  /^(\d{4}-\d{2}-\d{2})-(.+)-([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})\.tmp$/;
 
 /**
  * Parse a session filename into structured parts.
  * Handles both default and renamed formats.
  */
-export function parseSessionFilename(filename: string): { date: string; titleSlug: string; uuid: string } | null {
+export function parseSessionFilename(
+  filename: string,
+): { date: string; titleSlug: string; uuid: string } | null {
   const match = filename.match(SESSION_FILENAME_REGEX);
   if (!match) return null;
 
@@ -89,7 +92,10 @@ export function parseSessionFilename(filename: string): { date: string; titleSlu
  * Find a session file by UUID. Works regardless of rename.
  * Returns null if not found.
  */
-export async function findSession(sessionsDir: string, uuid: string): Promise<SessionInfo | null> {
+export async function findSession(
+  sessionsDir: string,
+  uuid: string,
+): Promise<SessionInfo | null> {
   try {
     const files = await fs.readdir(sessionsDir);
 
@@ -124,8 +130,17 @@ export async function findSession(sessionsDir: string, uuid: string): Promise<Se
  * List session files with optional filtering.
  * Returns sorted by modification time (newest first).
  */
-export async function listSessions(sessionsDir: string, options: ListSessionsOptions = {}): Promise<SessionInfo[]> {
-  const { maxAge, date, exclude, excludeTemplates = false, limit = 50 } = options;
+export async function listSessions(
+  sessionsDir: string,
+  options: ListSessionsOptions = {},
+): Promise<SessionInfo[]> {
+  const {
+    maxAge,
+    date,
+    exclude,
+    excludeTemplates = false,
+    limit = 50,
+  } = options;
   const results: SessionInfo[] = [];
 
   try {
@@ -146,7 +161,7 @@ export async function listSessions(sessionsDir: string, options: ListSessionsOpt
       const fullPath = join(sessionsDir, filename);
       const stats = await fs.stat(fullPath);
 
-      if (maxAgeMs && (now - stats.mtimeMs) > maxAgeMs) continue;
+      if (maxAgeMs && now - stats.mtimeMs > maxAgeMs) continue;
 
       if (excludeTemplates) {
         try {
@@ -192,10 +207,12 @@ export function isTemplate(content: string): boolean {
   // Last Updated differs from Started = used
   const startedMatch = content.match(/\*\*Started:\*\* (\d{2}:\d{2})/);
   const updatedMatch = content.match(/\*\*Last Updated:\*\* (\d{2}:\d{2})/);
-  if (startedMatch && updatedMatch && startedMatch[1] !== updatedMatch[1]) return false;
+  if (startedMatch && updatedMatch && startedMatch[1] !== updatedMatch[1])
+    return false;
 
   // Placeholder text still present = template
-  if (content.includes('[One line: what you are working on right now]')) return true;
+  if (content.includes('[One line: what you are working on right now]'))
+    return true;
 
   // Default: if placeholder was modified, it's been used
   return false;
@@ -243,44 +260,54 @@ export function parseSessionMetadata(content: string): SessionMetadata {
   if (idMatch) metadata.sessionId = idMatch[1];
 
   // Completed items (supports both - [x] and - bullet styles)
-  const completedSection = content.match(/###?\s*Completed\s*\n([\s\S]*?)(?=\n###?\s|\n---|\n## )/);
+  const completedSection = content.match(
+    /###?\s*Completed\s*\n([\s\S]*?)(?=\n###?\s|\n---|\n## )/,
+  );
   if (completedSection) {
     const items = completedSection[1].match(/^- (?:\[x\]\s*)?(.+)$/gm);
     if (items) {
       metadata.completed = items
-        .map(item => item.replace(/^- (?:\[x\]\s*)?/, '').trim())
-        .filter(item => item && item !== '[ ]');
+        .map((item) => item.replace(/^- (?:\[x\]\s*)?/, '').trim())
+        .filter((item) => item && item !== '[ ]');
     }
   }
 
   // In Progress items
-  const progressSection = content.match(/###?\s*In Progress\s*\n([\s\S]*?)(?=\n###?\s|\n---|\n## )/);
+  const progressSection = content.match(
+    /###?\s*In Progress\s*\n([\s\S]*?)(?=\n###?\s|\n---|\n## )/,
+  );
   if (progressSection) {
     const items = progressSection[1].match(/^- (?:\[ \]\s*)?(.+)$/gm);
     if (items) {
       metadata.inProgress = items
-        .map(item => item.replace(/^- (?:\[ \]\s*)?/, '').trim())
-        .filter(item => item && !item.startsWith('['));
+        .map((item) => item.replace(/^- (?:\[ \]\s*)?/, '').trim())
+        .filter((item) => item && !item.startsWith('['));
     }
   }
 
   // Blockers
-  const blockersSection = content.match(/###?\s*Blockers\s*\n([\s\S]*?)(?=\n###?\s|\n---|\n## )/);
+  const blockersSection = content.match(
+    /###?\s*Blockers\s*\n([\s\S]*?)(?=\n###?\s|\n---|\n## )/,
+  );
   if (blockersSection) {
     const items = blockersSection[1].match(/^- (.+)$/gm);
     if (items) {
       metadata.blockers = items
-        .map(item => item.replace(/^- /, '').trim())
-        .filter(item => item && item !== 'None');
+        .map((item) => item.replace(/^- /, '').trim())
+        .filter((item) => item && item !== 'None');
     }
   }
 
   // Notes for Next Session
-  const notesSection = content.match(/###?\s*Notes for Next Session\s*\n([\s\S]*?)(?=\n###?\s|\n---|\n## )/);
+  const notesSection = content.match(
+    /###?\s*Notes for Next Session\s*\n([\s\S]*?)(?=\n###?\s|\n---|\n## )/,
+  );
   if (notesSection) metadata.notes = notesSection[1].trim();
 
   // Context to Load
-  const contextSection = content.match(/###?\s*Context to Load\s*\n```\n([\s\S]*?)```/);
+  const contextSection = content.match(
+    /###?\s*Context to Load\s*\n```\n([\s\S]*?)```/,
+  );
   if (contextSection) metadata.context = contextSection[1].trim();
 
   return metadata;
@@ -302,7 +329,10 @@ export async function readSession(sessionPath: string): Promise<string | null> {
 /**
  * Write content to a session file.
  */
-export async function writeSession(sessionPath: string, content: string): Promise<boolean> {
+export async function writeSession(
+  sessionPath: string,
+  content: string,
+): Promise<boolean> {
   try {
     await Bun.write(sessionPath, content);
     return true;
@@ -314,10 +344,13 @@ export async function writeSession(sessionPath: string, content: string): Promis
 /**
  * Append content to a session file.
  */
-export async function appendToSession(sessionPath: string, content: string): Promise<boolean> {
+export async function appendToSession(
+  sessionPath: string,
+  content: string,
+): Promise<boolean> {
   try {
     // Preserve existing behavior: return false if target file does not exist.
-    if (!await Bun.file(sessionPath).exists()) {
+    if (!(await Bun.file(sessionPath).exists())) {
       return false;
     }
 
@@ -349,11 +382,11 @@ export async function deleteSession(sessionPath: string): Promise<boolean> {
 export function slugifyTitle(title: string): string {
   return title
     .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, '')  // Remove non-alphanumeric (keep spaces and dashes)
-    .replace(/\s+/g, '-')           // Spaces to dashes
-    .replace(/-+/g, '-')            // Collapse multiple dashes
-    .replace(/^-|-$/g, '')          // Trim leading/trailing dashes
-    .slice(0, 60);                  // Cap length
+    .replace(/[^a-z0-9\s-]/g, '') // Remove non-alphanumeric (keep spaces and dashes)
+    .replace(/\s+/g, '-') // Spaces to dashes
+    .replace(/-+/g, '-') // Collapse multiple dashes
+    .replace(/^-|-$/g, '') // Trim leading/trailing dashes
+    .slice(0, 60); // Cap length
 }
 
 const SESSION_TITLE_PLACEHOLDERS = new Set([
@@ -366,7 +399,10 @@ const SESSION_TITLE_PLACEHOLDERS = new Set([
  * Only renames if the title was changed from the placeholder.
  * Returns the new SessionInfo or null if no rename needed.
  */
-export async function renameSessionFromTitle(session: SessionInfo, content: string): Promise<SessionInfo | null> {
+export async function renameSessionFromTitle(
+  session: SessionInfo,
+  content: string,
+): Promise<SessionInfo | null> {
   const meta = parseSessionMetadata(content);
   const title = meta.title?.trim();
 
@@ -412,7 +448,10 @@ export interface InitSessionResult {
  * Initialize a session: derive paths and create template if needed.
  * Handles transcript path derivation and session file creation.
  */
-export async function initSession(sessionsDir: string, sessionId: string): Promise<InitSessionResult> {
+export async function initSession(
+  sessionsDir: string,
+  sessionId: string,
+): Promise<InitSessionResult> {
   const projectDir = join(sessionsDir, '..');
   const transcriptsDir = join(projectDir, 'agent-transcripts');
   const txtPath = join(transcriptsDir, `${sessionId}.txt`);
@@ -423,8 +462,14 @@ export async function initSession(sessionsDir: string, sessionId: string): Promi
   const sessionFile = join(sessionsDir, buildSessionFilename(date, sessionId));
 
   let isNew = false;
-  if (!await Bun.file(sessionFile).exists()) {
-    const template = createSessionTemplate({ sessionId, date, time, txtPath, jsonlPath });
+  if (!(await Bun.file(sessionFile).exists())) {
+    const template = createSessionTemplate({
+      sessionId,
+      date,
+      time,
+      txtPath,
+      jsonlPath,
+    });
     await writeSession(sessionFile, template);
     isNew = true;
   }

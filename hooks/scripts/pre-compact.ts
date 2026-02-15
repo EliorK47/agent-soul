@@ -6,7 +6,7 @@
  * and notify the AI about compaction.
  */
 
-import { join, dirname } from 'path';
+import { dirname, join } from 'node:path';
 
 interface PreCompactInput {
   conversation_id?: string;
@@ -49,11 +49,11 @@ async function main() {
   const configDir = join(sessionsDir, 'config');
 
   // Ensure sessions directory exists
-  if (!await Bun.file(sessionsDir).exists()) {
+  if (!(await Bun.file(sessionsDir).exists())) {
     await Bun.write(join(sessionsDir, '.keep'), '');
   }
 
-  if (!await Bun.file(configDir).exists()) {
+  if (!(await Bun.file(configDir).exists())) {
     await Bun.write(join(configDir, '.keep'), '');
   }
 
@@ -63,7 +63,7 @@ async function main() {
     timestamp: new Date().toISOString(),
     transcript_path: txtPath,
     context_usage_percent: data.context_usage_percent || 0,
-    messages_to_compact: data.messages_to_compact || 0
+    messages_to_compact: data.messages_to_compact || 0,
   };
 
   await Bun.write(flagFile, JSON.stringify(flagData));
@@ -73,8 +73,11 @@ async function main() {
   process.exit(0);
 }
 
-main().catch(err => {
-  console.error('[PreCompact] Error:', err instanceof Error ? err.message : String(err));
+main().catch((err) => {
+  console.error(
+    '[PreCompact] Error:',
+    err instanceof Error ? err.message : String(err),
+  );
   console.log(JSON.stringify({}));
   process.exit(0);
 });

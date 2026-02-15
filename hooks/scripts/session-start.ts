@@ -5,10 +5,10 @@
  * Orchestrates: bootstrap -> init session -> load content -> build context
  */
 
-import { join, normalize } from 'path';
+import { join, normalize } from 'node:path';
+import { ensureWorkspaceSetup } from '../lib/bootstrap';
 import { getPackageManager } from '../lib/package-manager';
 import { initSession, listSessions } from '../lib/session-manager';
-import { ensureWorkspaceSetup } from '../lib/bootstrap';
 import { getProjectSessionsDir } from '../lib/utils';
 
 interface SessionStartInput {
@@ -39,7 +39,8 @@ async function main() {
   }
 
   const data: SessionStartInput = JSON.parse(input.replace(/^\uFEFF/, ''));
-  const sessionId = data.session_id || data.conversation_id || crypto.randomUUID();
+  const sessionId =
+    data.session_id || data.conversation_id || crypto.randomUUID();
   const workspaceRoot = data.workspace_roots?.[0]
     ? normalize(data.workspace_roots[0].replace(/^\/([a-z]:)/i, '$1'))
     : process.cwd();
@@ -66,9 +67,13 @@ async function main() {
   // Memory (first 200 lines)
   let memoryContent = '';
   try {
-    const fullContent = (await Bun.file(paths.memoryFile).text()).replace(/\r\n/g, '\n');
+    const fullContent = (await Bun.file(paths.memoryFile).text()).replace(
+      /\r\n/g,
+      '\n',
+    );
     const lines = fullContent.split('\n');
-    memoryContent = lines.length > 200 ? lines.slice(0, 200).join('\n') : fullContent;
+    memoryContent =
+      lines.length > 200 ? lines.slice(0, 200).join('\n') : fullContent;
   } catch {
     // Memory file unreadable
   }
@@ -89,32 +94,42 @@ async function main() {
     // USER.md not found
   }
 
-  const userIsEmpty = !userContent || /^\s*-\s*\*\*Name:\*\*\s*$/m.test(userContent);
+  const userIsEmpty =
+    !userContent || /^\s*-\s*\*\*Name:\*\*\s*$/m.test(userContent);
 
   // Package manager
   let packageManagerInfo = 'unknown';
   try {
     const pmPromise = getPackageManager({ projectDir: workspaceRoot });
     const timeoutPromise = new Promise<null>((_, reject) =>
-      setTimeout(() => reject(new Error('PM timeout')), 2000)
+      setTimeout(() => reject(new Error('PM timeout')), 2000),
     );
 
     const pm = await Promise.race([pmPromise, timeoutPromise]);
     if (pm) {
-      packageManagerInfo = pm?.name ? `${pm.name} (${pm.source || 'detected'})` : 'unknown';
+      packageManagerInfo = pm?.name
+        ? `${pm.name} (${pm.source || 'detected'})`
+        : 'unknown';
     }
   } catch {
     const projectRoot = workspaceRoot;
     if (
-      await Bun.file(join(projectRoot, 'bun.lockb')).exists()
-      || await Bun.file(join(projectRoot, 'bun.lock')).exists()
-    ) packageManagerInfo = 'bun';
-    else if (await Bun.file(join(projectRoot, 'pnpm-lock.yaml')).exists()) packageManagerInfo = 'pnpm';
-    else if (await Bun.file(join(projectRoot, 'yarn.lock')).exists()) packageManagerInfo = 'yarn';
-    else if (await Bun.file(join(projectRoot, 'package-lock.json')).exists()) packageManagerInfo = 'npm';
-    else if (await Bun.file(join(projectRoot, 'poetry.lock')).exists()) packageManagerInfo = 'poetry';
-    else if (await Bun.file(join(projectRoot, 'Pipfile.lock')).exists()) packageManagerInfo = 'pipenv';
-    else if (await Bun.file(join(projectRoot, 'requirements.txt')).exists()) packageManagerInfo = 'pip';
+      (await Bun.file(join(projectRoot, 'bun.lockb')).exists()) ||
+      (await Bun.file(join(projectRoot, 'bun.lock')).exists())
+    )
+      packageManagerInfo = 'bun';
+    else if (await Bun.file(join(projectRoot, 'pnpm-lock.yaml')).exists())
+      packageManagerInfo = 'pnpm';
+    else if (await Bun.file(join(projectRoot, 'yarn.lock')).exists())
+      packageManagerInfo = 'yarn';
+    else if (await Bun.file(join(projectRoot, 'package-lock.json')).exists())
+      packageManagerInfo = 'npm';
+    else if (await Bun.file(join(projectRoot, 'poetry.lock')).exists())
+      packageManagerInfo = 'poetry';
+    else if (await Bun.file(join(projectRoot, 'Pipfile.lock')).exists())
+      packageManagerInfo = 'pipenv';
+    else if (await Bun.file(join(projectRoot, 'requirements.txt')).exists())
+      packageManagerInfo = 'pip';
   }
 
   // === BUILD CONTEXT ===
@@ -124,7 +139,9 @@ async function main() {
     recentSessionLines.push(`Last session: ${recentSessions[0].filename}`);
     const others = recentSessions.length - 1;
     if (others > 0) {
-      recentSessionLines.push(`${others} other session${others > 1 ? 's' : ''} from the last 7 days`);
+      recentSessionLines.push(
+        `${others} other session${others > 1 ? 's' : ''} from the last 7 days`,
+      );
     }
   }
 
@@ -162,7 +179,7 @@ Guidelines:
 
 ---
 # Session File- ${session.sessionFile}
-${recentSessionLines.length > 0 ? '\n' + recentSessionLines.join('\n') + '\n' : ''}
+${recentSessionLines.length > 0 ? `\n${recentSessionLines.join('\n')}\n` : ''}
 Guidelines:
   - Update at meaningful milestones (decisions, blockers, context shifts), not every small step
   - Keep sections concise: Current State, Completed, In Progress, Blockers, Notes for Next Session, Context to Load, Session Log
@@ -196,8 +213,11 @@ ${memoryContent || '(empty -- new project memory)'}
   process.exit(0);
 }
 
-main().catch(err => {
-  console.error('[SessionStart] Error:', err instanceof Error ? err.message : String(err));
+main().catch((err) => {
+  console.error(
+    '[SessionStart] Error:',
+    err instanceof Error ? err.message : String(err),
+  );
   console.log(JSON.stringify({ additional_context: '' }));
   process.exit(0);
 });

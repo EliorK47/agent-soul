@@ -5,7 +5,7 @@
  * Supports: npm, pnpm, yarn, bun, pip, poetry
  */
 
-import { join } from 'path';
+import { join } from 'node:path';
 import { commandExists, getClaudeDir, readFile, writeFile } from './utils';
 
 export interface PackageManagerConfig {
@@ -40,7 +40,7 @@ export const PACKAGE_MANAGERS = {
     execCmd: 'npx',
     testCmd: 'npm test',
     buildCmd: 'npm run build',
-    devCmd: 'npm run dev'
+    devCmd: 'npm run dev',
   },
   pnpm: {
     name: 'pnpm',
@@ -50,7 +50,7 @@ export const PACKAGE_MANAGERS = {
     execCmd: 'pnpm dlx',
     testCmd: 'pnpm test',
     buildCmd: 'pnpm build',
-    devCmd: 'pnpm dev'
+    devCmd: 'pnpm dev',
   },
   yarn: {
     name: 'yarn',
@@ -60,7 +60,7 @@ export const PACKAGE_MANAGERS = {
     execCmd: 'yarn dlx',
     testCmd: 'yarn test',
     buildCmd: 'yarn build',
-    devCmd: 'yarn dev'
+    devCmd: 'yarn dev',
   },
   bun: {
     name: 'bun',
@@ -70,7 +70,7 @@ export const PACKAGE_MANAGERS = {
     execCmd: 'bunx',
     testCmd: 'bun test',
     buildCmd: 'bun run build',
-    devCmd: 'bun run dev'
+    devCmd: 'bun run dev',
   },
   pip: {
     name: 'pip',
@@ -80,7 +80,7 @@ export const PACKAGE_MANAGERS = {
     execCmd: 'python -m',
     testCmd: 'pytest',
     buildCmd: 'python setup.py build',
-    devCmd: 'python -m flask run'
+    devCmd: 'python -m flask run',
   },
   poetry: {
     name: 'poetry',
@@ -90,14 +90,21 @@ export const PACKAGE_MANAGERS = {
     execCmd: 'poetry run',
     testCmd: 'poetry run pytest',
     buildCmd: 'poetry build',
-    devCmd: 'poetry run python -m flask run'
-  }
+    devCmd: 'poetry run python -m flask run',
+  },
 } as const;
 
 export type PackageManagerName = keyof typeof PACKAGE_MANAGERS;
 
 // Priority order for detection (JS first, then Python)
-export const DETECTION_PRIORITY: PackageManagerName[] = ['pnpm', 'bun', 'yarn', 'npm', 'poetry', 'pip'];
+export const DETECTION_PRIORITY: PackageManagerName[] = [
+  'pnpm',
+  'bun',
+  'yarn',
+  'npm',
+  'poetry',
+  'pip',
+];
 
 // Config file path
 async function getConfigPath(): Promise<string> {
@@ -105,9 +112,12 @@ async function getConfigPath(): Promise<string> {
 }
 
 // Load saved package manager configuration
-async function loadConfig(): Promise<{ packageManager?: string; setAt?: string } | null> {
+async function loadConfig(): Promise<{
+  packageManager?: string;
+  setAt?: string;
+} | null> {
   const configPath = await getConfigPath();
-  
+
   try {
     return await Bun.file(configPath).json();
   } catch {
@@ -116,13 +126,18 @@ async function loadConfig(): Promise<{ packageManager?: string; setAt?: string }
 }
 
 // Save package manager configuration
-async function saveConfig(config: { packageManager: string; setAt: string }): Promise<void> {
+async function saveConfig(config: {
+  packageManager: string;
+  setAt: string;
+}): Promise<void> {
   const configPath = await getConfigPath();
   await writeFile(configPath, JSON.stringify(config, null, 2));
 }
 
 // Detect package manager from lock file in project directory
-export async function detectFromLockFile(projectDir: string = process.cwd()): Promise<PackageManagerName | null> {
+export async function detectFromLockFile(
+  projectDir: string = process.cwd(),
+): Promise<PackageManagerName | null> {
   for (const pmName of DETECTION_PRIORITY) {
     const pm = PACKAGE_MANAGERS[pmName];
     const lockFilePath = join(projectDir, pm.lockFile);
@@ -141,7 +156,7 @@ export async function detectFromLockFile(projectDir: string = process.cwd()): Pr
   const pyprojectPath = join(projectDir, 'pyproject.toml');
   if (await Bun.file(pyprojectPath).exists()) {
     const content = await readFile(pyprojectPath);
-    if (content && content.includes('[tool.poetry]')) {
+    if (content?.includes('[tool.poetry]')) {
       return 'poetry';
     }
   }
@@ -150,9 +165,11 @@ export async function detectFromLockFile(projectDir: string = process.cwd()): Pr
 }
 
 // Detect package manager from package.json packageManager field
-export async function detectFromPackageJson(projectDir: string = process.cwd()): Promise<PackageManagerName | null> {
+export async function detectFromPackageJson(
+  projectDir: string = process.cwd(),
+): Promise<PackageManagerName | null> {
   const packageJsonPath = join(projectDir, 'package.json');
-  
+
   try {
     const pkg = await Bun.file(packageJsonPath).json();
     if (pkg.packageManager) {
@@ -192,29 +209,33 @@ export async function getAvailablePackageManagers(): Promise<string[]> {
  * 5. Global user preference (in ~/.cursor/package-manager.json)
  * 6. First available package manager (by priority)
  */
-export async function getPackageManager(options: PackageManagerOptions = {}): Promise<PackageManagerResult> {
-  const { projectDir = process.cwd(), fallbackOrder = DETECTION_PRIORITY } = options;
+export async function getPackageManager(
+  options: PackageManagerOptions = {},
+): Promise<PackageManagerResult> {
+  const { projectDir = process.cwd(), fallbackOrder = DETECTION_PRIORITY } =
+    options;
 
   // 1. Check environment variable
-  const envPm = process.env.CURSOR_PACKAGE_MANAGER || process.env.CLAUDE_PACKAGE_MANAGER;
+  const envPm =
+    process.env.CURSOR_PACKAGE_MANAGER || process.env.CLAUDE_PACKAGE_MANAGER;
   if (envPm && envPm in PACKAGE_MANAGERS) {
     return {
       name: envPm,
       config: PACKAGE_MANAGERS[envPm as PackageManagerName],
-      source: 'environment'
+      source: 'environment',
     };
   }
 
   // 2. Check project-specific config
   let projectConfigPath = join(projectDir, '.cursor', 'package-manager.json');
-  
+
   try {
     const config = await Bun.file(projectConfigPath).json();
     if (config.packageManager && config.packageManager in PACKAGE_MANAGERS) {
       return {
         name: config.packageManager,
         config: PACKAGE_MANAGERS[config.packageManager as PackageManagerName],
-        source: 'project-config'
+        source: 'project-config',
       };
     }
   } catch {
@@ -226,7 +247,7 @@ export async function getPackageManager(options: PackageManagerOptions = {}): Pr
         return {
           name: config.packageManager,
           config: PACKAGE_MANAGERS[config.packageManager as PackageManagerName],
-          source: 'project-config'
+          source: 'project-config',
         };
       }
     } catch {
@@ -240,7 +261,7 @@ export async function getPackageManager(options: PackageManagerOptions = {}): Pr
     return {
       name: fromPackageJson,
       config: PACKAGE_MANAGERS[fromPackageJson],
-      source: 'package.json'
+      source: 'package.json',
     };
   }
 
@@ -250,18 +271,22 @@ export async function getPackageManager(options: PackageManagerOptions = {}): Pr
     return {
       name: fromLockFile,
       config: PACKAGE_MANAGERS[fromLockFile],
-      source: 'lock-file'
+      source: 'lock-file',
     };
   }
 
   // 5. Check global user preference
   const globalConfig = await loadConfig();
-  if (globalConfig && globalConfig.packageManager && globalConfig.packageManager in PACKAGE_MANAGERS) {
-    const pmConfig = PACKAGE_MANAGERS[globalConfig.packageManager as PackageManagerName];
+  if (
+    globalConfig?.packageManager &&
+    globalConfig.packageManager in PACKAGE_MANAGERS
+  ) {
+    const pmConfig =
+      PACKAGE_MANAGERS[globalConfig.packageManager as PackageManagerName];
     return {
       name: globalConfig.packageManager,
       config: pmConfig,
-      source: 'global-config'
+      source: 'global-config',
     };
   }
 
@@ -272,7 +297,7 @@ export async function getPackageManager(options: PackageManagerOptions = {}): Pr
       return {
         name: pmName,
         config: PACKAGE_MANAGERS[pmName as PackageManagerName],
-        source: 'fallback'
+        source: 'fallback',
       };
     }
   }
@@ -281,20 +306,22 @@ export async function getPackageManager(options: PackageManagerOptions = {}): Pr
   return {
     name: 'npm',
     config: PACKAGE_MANAGERS.npm,
-    source: 'default'
+    source: 'default',
   };
 }
 
 // Set user's preferred package manager (global)
-export async function setPreferredPackageManager(pmName: string): Promise<{ packageManager: string; setAt: string }> {
+export async function setPreferredPackageManager(
+  pmName: string,
+): Promise<{ packageManager: string; setAt: string }> {
   if (!(pmName in PACKAGE_MANAGERS)) {
     throw new Error(`Unknown package manager: ${pmName}`);
   }
 
-  const config = await loadConfig() || {};
+  const _config = (await loadConfig()) || {};
   const newConfig = {
     packageManager: pmName,
-    setAt: new Date().toISOString()
+    setAt: new Date().toISOString(),
   };
   await saveConfig(newConfig);
 
@@ -302,7 +329,10 @@ export async function setPreferredPackageManager(pmName: string): Promise<{ pack
 }
 
 // Set project's preferred package manager
-export async function setProjectPackageManager(pmName: string, projectDir: string = process.cwd()): Promise<{ packageManager: string; setAt: string }> {
+export async function setProjectPackageManager(
+  pmName: string,
+  projectDir: string = process.cwd(),
+): Promise<{ packageManager: string; setAt: string }> {
   if (!(pmName in PACKAGE_MANAGERS)) {
     throw new Error(`Unknown package manager: ${pmName}`);
   }
@@ -312,7 +342,7 @@ export async function setProjectPackageManager(pmName: string, projectDir: strin
 
   const config = {
     packageManager: pmName,
-    setAt: new Date().toISOString()
+    setAt: new Date().toISOString(),
   };
 
   await writeFile(configPath, JSON.stringify(config, null, 2));
@@ -320,7 +350,10 @@ export async function setProjectPackageManager(pmName: string, projectDir: strin
 }
 
 // Get the command to run a script
-export async function getRunCommand(script: string, options: PackageManagerOptions = {}): Promise<string> {
+export async function getRunCommand(
+  script: string,
+  options: PackageManagerOptions = {},
+): Promise<string> {
   const pm = await getPackageManager(options);
 
   switch (script) {
@@ -338,9 +371,13 @@ export async function getRunCommand(script: string, options: PackageManagerOptio
 }
 
 // Get the command to execute a package binary
-export async function getExecCommand(binary: string, args: string = '', options: PackageManagerOptions = {}): Promise<string> {
+export async function getExecCommand(
+  binary: string,
+  args: string = '',
+  options: PackageManagerOptions = {},
+): Promise<string> {
   const pm = await getPackageManager(options);
-  return `${pm.config.execCmd} ${binary}${args ? ' ' + args : ''}`;
+  return `${pm.config.execCmd} ${binary}${args ? ` ${args}` : ''}`;
 }
 
 // Interactive prompt for package manager selection
@@ -357,7 +394,8 @@ export async function getSelectionPrompt(): Promise<string> {
 
   message += '\nTo set your preferred package manager:\n';
   message += '  - Global: Set CURSOR_PACKAGE_MANAGER environment variable\n';
-  message += '  - Or add to ~/.cursor/package-manager.json: {"packageManager": "pnpm"}\n';
+  message +=
+    '  - Or add to ~/.cursor/package-manager.json: {"packageManager": "pnpm"}\n';
   message += '  - Or add to package.json: {"packageManager": "pnpm@8"}\n';
 
   return message;
@@ -374,7 +412,7 @@ export function getCommandPattern(action: string): string {
       'yarn dev',
       'bun run dev',
       'poetry run python -m flask run',
-      'python -m flask run'
+      'python -m flask run',
     );
   } else if (action === 'install') {
     patterns.push(
@@ -383,7 +421,7 @@ export function getCommandPattern(action: string): string {
       'yarn( install)?',
       'bun install',
       'pip install -r requirements\\.txt',
-      'poetry install'
+      'poetry install',
     );
   } else if (action === 'test') {
     patterns.push(
@@ -392,7 +430,7 @@ export function getCommandPattern(action: string): string {
       'yarn test',
       'bun test',
       'pytest',
-      'poetry run pytest'
+      'poetry run pytest',
     );
   } else if (action === 'build') {
     patterns.push(
@@ -401,7 +439,7 @@ export function getCommandPattern(action: string): string {
       'yarn build',
       'bun run build',
       'python setup\\.py build',
-      'poetry build'
+      'poetry build',
     );
   } else {
     // Generic run command
@@ -411,7 +449,7 @@ export function getCommandPattern(action: string): string {
       `yarn ${action}`,
       `bun run ${action}`,
       `poetry run ${action}`,
-      `python -m ${action}`
+      `python -m ${action}`,
     );
   }
 

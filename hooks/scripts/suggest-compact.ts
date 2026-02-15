@@ -7,8 +7,8 @@
  * Uses flag file to prevent duplicate notifications per milestone bracket.
  */
 
-import { join, dirname } from 'path';
-import { findSession, appendToSession } from '../lib/session-manager';
+import { dirname, join } from 'node:path';
+import { appendToSession, findSession } from '../lib/session-manager';
 
 interface StopInput {
   loop_count?: number;
@@ -42,7 +42,7 @@ async function main() {
   const loopCount = data.loop_count || 0;
   const transcriptPath = data.transcript_path;
   const sessionId = data.conversation_id || 'default';
-  const status = data.status || 'completed';
+  const _status = data.status || 'completed';
 
   // Skip if in loop or no transcript
   if (loopCount > 0 || !transcriptPath) {
@@ -79,7 +79,10 @@ async function main() {
       await Bun.write(offsetFile, String(currentToolCount));
 
       // Reset last notified so thresholds fire fresh
-      const lastNotifiedFile = join(configDir, `cursor-last-notified-${sessionId}`);
+      const lastNotifiedFile = join(
+        configDir,
+        `cursor-last-notified-${sessionId}`,
+      );
       await Bun.write(lastNotifiedFile, '0');
 
       // Update session file with compaction log
@@ -96,7 +99,10 @@ async function main() {
       console.log(JSON.stringify({ followup_message: message } as StopOutput));
       process.exit(0);
     } catch (err) {
-      console.error('[StrategicCompact] Compaction flag error:', err instanceof Error ? err.message : String(err));
+      console.error(
+        '[StrategicCompact] Compaction flag error:',
+        err instanceof Error ? err.message : String(err),
+      );
       if (await Bun.file(flagFile).exists()) {
         await Bun.file(flagFile).delete();
       }
@@ -124,7 +130,8 @@ async function main() {
   const lastNotifiedFile = join(configDir, `cursor-last-notified-${sessionId}`);
   let lastNotifiedCallCount = 0;
   if (await Bun.file(lastNotifiedFile).exists()) {
-    lastNotifiedCallCount = parseInt((await Bun.file(lastNotifiedFile).text()).trim(), 10) || 0;
+    lastNotifiedCallCount =
+      parseInt((await Bun.file(lastNotifiedFile).text()).trim(), 10) || 0;
   }
 
   // === MILESTONE DETECTION ===
@@ -132,7 +139,8 @@ async function main() {
   const INTERVAL = 50;
 
   // Check if we crossed the next interval boundary since last notification
-  const nextMilestone = (Math.floor(lastNotifiedCallCount / INTERVAL) + 1) * INTERVAL;
+  const nextMilestone =
+    (Math.floor(lastNotifiedCallCount / INTERVAL) + 1) * INTERVAL;
   if (effectiveToolCount < nextMilestone) {
     console.log(JSON.stringify({}));
     process.exit(0);
@@ -161,8 +169,11 @@ async function main() {
   process.exit(0);
 }
 
-main().catch(err => {
-  console.error('[StrategicCompact] Error:', err instanceof Error ? err.message : String(err));
+main().catch((err) => {
+  console.error(
+    '[StrategicCompact] Error:',
+    err instanceof Error ? err.message : String(err),
+  );
   console.log(JSON.stringify({}));
   process.exit(0);
 });
