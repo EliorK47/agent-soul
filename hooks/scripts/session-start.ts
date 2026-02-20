@@ -9,7 +9,7 @@ import { join, normalize } from 'node:path';
 import { ensureWorkspaceSetup } from '../lib/bootstrap';
 import { getPackageManager } from '../lib/package-manager';
 import { initSession, listSessions } from '../lib/session-manager';
-import { getProjectSessionsDir } from '../lib/utils';
+import { getProjectSessionsDir, readStdinJson } from '../lib/utils';
 
 interface SessionStartInput {
   // Common schema (all hooks)
@@ -32,13 +32,7 @@ interface SessionStartOutput {
 }
 
 async function main() {
-  // Read stdin
-  let input = '';
-  for await (const chunk of Bun.stdin.stream()) {
-    input += new TextDecoder().decode(chunk);
-  }
-
-  const data: SessionStartInput = JSON.parse(input.replace(/^\uFEFF/, ''));
+  const data = await readStdinJson<SessionStartInput>();
   const sessionId =
     data.session_id || data.conversation_id || crypto.randomUUID();
   const workspaceRoot = data.workspace_roots?.[0]

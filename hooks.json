@@ -14,6 +14,11 @@
     // Exit 2 blocks tool execution
     "preToolUse": [
       {
+        "matcher": "Shell|Read|Write|StrReplace|Grep|Glob|Task|Delete|CallMcpTool",
+        "command": "bun hooks/scripts/count-tool.ts",
+        "description": "Increment tool call counter for milestone tracking"
+      },
+      {
         "matcher": "Write",
         "command": "bun hooks/scripts/block-md-files.ts",
         "description": "Block creation of random .md files - keeps docs consolidated"

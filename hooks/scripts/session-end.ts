@@ -15,7 +15,7 @@ import {
   readSession,
   renameSessionFromTitle,
 } from '../lib/session-manager';
-import { getProjectSessionsDir } from '../lib/utils';
+import { getProjectSessionsDir, readStdinJson } from '../lib/utils';
 
 interface SessionEndInput {
   session_id?: string;
@@ -24,13 +24,7 @@ interface SessionEndInput {
 }
 
 async function main() {
-  // Read stdin
-  let input = '';
-  for await (const chunk of Bun.stdin.stream()) {
-    input += new TextDecoder().decode(chunk);
-  }
-
-  const data: SessionEndInput = JSON.parse(input.replace(/^\uFEFF/, ''));
+  const data = await readStdinJson<SessionEndInput>();
   const sessionId = data.session_id || data.conversation_id || 'default';
   const workspaceRoot = data.workspace_roots?.[0]
     ? normalize(data.workspace_roots[0].replace(/^\/([a-z]:)/i, '$1'))

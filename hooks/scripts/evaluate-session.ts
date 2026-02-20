@@ -1,6 +1,11 @@
 #!/usr/bin/env bun
 
-import { countInFile, ensureDir, getLearnedSkillsDir } from '../lib/utils';
+import {
+  countInFile,
+  ensureDir,
+  getLearnedSkillsDir,
+  readStdinJson,
+} from '../lib/utils';
 
 interface SessionEndInput {
   transcript_path?: string;
@@ -12,10 +17,7 @@ interface SessionEndOutput {
 }
 
 try {
-  // Read hook input from stdin
-  const input: SessionEndInput = JSON.parse(
-    (await Bun.stdin.text()).replace(/^\uFEFF/, ''),
-  );
+  const input = await readStdinJson<SessionEndInput>();
   const transcriptPath = input.transcript_path;
 
   const learnedSkillsPath = await getLearnedSkillsDir();

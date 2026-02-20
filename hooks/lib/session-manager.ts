@@ -11,6 +11,7 @@
 
 import * as fs from 'node:fs/promises';
 import { dirname, join } from 'node:path';
+import { getDateString, getTimeString } from './utils';
 
 // --- Types ---
 
@@ -436,8 +437,6 @@ export async function renameSessionFromTitle(
 export interface InitSessionResult {
   /** Full path to the session file */
   sessionFile: string;
-  /** Path to transcript .txt file */
-  txtPath: string;
   /** Path to transcript .jsonl file */
   jsonlPath: string;
   /** Whether the session file was newly created */
@@ -454,11 +453,10 @@ export async function initSession(
 ): Promise<InitSessionResult> {
   const projectDir = join(sessionsDir, '..');
   const transcriptsDir = join(projectDir, 'agent-transcripts');
-  const txtPath = join(transcriptsDir, `${sessionId}.txt`);
-  const jsonlPath = join(transcriptsDir, `${sessionId}.jsonl`);
+  const jsonlPath = join(transcriptsDir, sessionId, `${sessionId}.jsonl`);
 
-  const date = new Date().toISOString().split('T')[0];
-  const time = new Date().toTimeString().split(' ')[0].slice(0, 5);
+  const date = getDateString();
+  const time = getTimeString();
   const sessionFile = join(sessionsDir, buildSessionFilename(date, sessionId));
 
   let isNew = false;
@@ -467,14 +465,13 @@ export async function initSession(
       sessionId,
       date,
       time,
-      txtPath,
       jsonlPath,
     });
     await writeSession(sessionFile, template);
     isNew = true;
   }
 
-  return { sessionFile, txtPath, jsonlPath, isNew };
+  return { sessionFile, jsonlPath, isNew };
 }
 
 // --- Template Creation ---
@@ -493,19 +490,16 @@ export function createSessionTemplate(options: {
   sessionId: string;
   date: string;
   time: string;
-  txtPath: string;
   jsonlPath: string;
 }): string {
-  const { sessionId, date, time, txtPath, jsonlPath } = options;
+  const { sessionId, date, time, jsonlPath } = options;
 
   return `# Session: [Set title once task is clear]
 **Date:** ${date}
 **Started:** ${time}
 **Last Updated:** ${time}
 **Session ID:** ${sessionId}
-**Transcripts:**
-- Text: ${txtPath}
-- JSONL: ${jsonlPath}
+**Transcript:** ${jsonlPath}
 
 ---
 
