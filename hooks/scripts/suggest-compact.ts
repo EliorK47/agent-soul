@@ -109,8 +109,7 @@ async function main() {
   // Fire a milestone reminder every N tool calls
   const INTERVAL = 50;
 
-  const nextMilestone =
-    (Math.floor(lastNotifiedCallCount / INTERVAL) + 1) * INTERVAL;
+  const nextMilestone = lastNotifiedCallCount + INTERVAL;
   if (toolCallCount < nextMilestone) {
     console.log(JSON.stringify({}));
     process.exit(0);
