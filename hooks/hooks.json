@@ -15,12 +15,12 @@
     "preToolUse": [
       {
         "matcher": "Shell|Read|Write|StrReplace|Grep|Glob|Task|Delete|CallMcpTool",
-        "command": "bun hooks/scripts/count-tool.ts",
+        "command": "bun scripts/session-management/hooks/count-tool.ts",
         "description": "Increment tool call counter for milestone tracking"
       },
       {
         "matcher": "Write",
-        "command": "bun hooks/scripts/block-md-files.ts",
+        "command": "bun scripts/session-management/hooks/block-md-files.ts",
         "description": "Block creation of random .md files - keeps docs consolidated"
       }
     ],
@@ -104,7 +104,7 @@
       // Exit 2 blocks session creation
       "sessionStart": [
         {
-          "command": "bun hooks/scripts/session-start.ts",
+          "command": "bun scripts/session-management/hooks/session-start.ts",
           "description": "Initialize session - create template and load previous context"
         }
       ],
@@ -115,7 +115,7 @@
       // Exit codes ignored
       "sessionEnd": [
         {
-          "command": "bun hooks/scripts/session-end.ts",
+          "command": "bun scripts/session-management/hooks/session-end.ts",
           "description": "Cleanup unused session templates and finalize active sessions"
         }
       ],
@@ -126,7 +126,7 @@
     // Exit codes ignored (observational only)
     "preCompact": [
       {
-        "command": "bun hooks/scripts/pre-compact.ts",
+        "command": "bun scripts/session-management/hooks/pre-compact.ts",
         "description": "Create compaction flag for stop hook detection"
       }
     ],
@@ -138,7 +138,7 @@
     // Exit codes ignored
     "stop": [
       {
-        "command": "bun hooks/scripts/suggest-compact.ts",
+        "command": "bun scripts/session-management/hooks/suggest-compact.ts",
         "description": "Suggest manual compaction at logical intervals",
         "loop_limit": 1
       }

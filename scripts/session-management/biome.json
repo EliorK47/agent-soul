@@ -4,7 +4,7 @@
     "enabled": true,
     "clientKind": "git",
     "useIgnoreFile": false,
-    "root": ".."
+    "root": "../.."
   },
   "files": {
     "ignoreUnknown": false

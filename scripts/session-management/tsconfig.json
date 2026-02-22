@@ -20,6 +20,6 @@
     "incremental": true,
     "isolatedModules": true
   },
-  "include": ["scripts/**/*.ts", "lib/**/*.ts"],
+  "include": ["hooks/**/*.ts", "lib/**/*.ts"],
   "exclude": ["node_modules", "backup", "*.js"]
 }
