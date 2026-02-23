@@ -23,6 +23,9 @@ if (!/\.(md|txt)$/i.test(filePath)) process.exit(0);
 if (/[\\/](memory|commands|agents|rules|skills|plans)[\\/]/i.test(filePath))
   process.exit(0);
 
+// Allow README at any level
+if (/[\\/]?README\.(md|txt)$/i.test(filePath)) process.exit(0);
+
 // Block: deny via stdout JSON
 console.log(
   JSON.stringify({
