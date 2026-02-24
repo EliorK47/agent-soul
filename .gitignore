@@ -3,3 +3,5 @@ bun.lock
 *.tmp
 *.tsbuildinfo
 .DS_Store
+scripts/session-management/hooks/setup-package-manager.ts
+scripts/session-management/hooks/evaluate-session.ts

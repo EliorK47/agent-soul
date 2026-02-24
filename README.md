@@ -70,7 +70,11 @@ Created on first run in `~/.cursor/`:
 - [Bun](https://bun.sh) -- all hook scripts run on Bun at runtime
 
 ```bash
+# macOS / Linux
 curl -fsSL https://bun.sh/install | bash
+
+# Windows
+powershell -c "irm bun.sh/install.ps1 | iex"
 ```
 
 ## Installation
@@ -83,17 +87,12 @@ In Cursor Agent chat:
 /plugin-add agent-soul
 ```
 
-Then install hook dependencies:
-
-```bash
-cd scripts/session-management && bun install
-```
+That's it. No additional setup needed -- hooks run directly on Bun with zero npm dependencies.
 
 ### Manual
 
 ```bash
 git clone https://github.com/EK47/agent-soul.git
-cd agent-soul/scripts/session-management && bun install
 ```
 
 ## Project Structure
@@ -114,7 +113,7 @@ assets/                    Logo
 
 ```bash
 cd scripts/session-management
-bun install
+bun install      # dev dependencies only (biome, types, tsc)
 bun run check    # biome lint + tsc strict typecheck
 ```
 
