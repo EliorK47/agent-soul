@@ -92,7 +92,7 @@ That's it. No additional setup needed -- hooks run directly on Bun with zero npm
 ### Manual
 
 ```bash
-git clone https://github.com/EK47/agent-soul.git
+git clone https://github.com/EliorK47/agent-soul.git
 ```
 
 ## Project Structure
