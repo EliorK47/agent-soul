@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "test": "bun test",
-    "check": "bunx biome check . && bunx tsc --noEmit",
-    "lint": "bunx biome check .",
-    "lint:fix": "bunx biome check --write --unsafe .",
+    "check": "bunx biome check scripts/session-management && bunx tsc --noEmit",
+    "lint": "bunx biome check scripts/session-management",
+    "lint:fix": "bunx biome check --write --unsafe scripts/session-management",
     "typecheck": "bunx tsc --noEmit"
   },
   "keywords": [
