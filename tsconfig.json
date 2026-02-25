@@ -20,6 +20,9 @@
     "incremental": true,
     "isolatedModules": true
   },
-  "include": ["hooks/**/*.ts", "lib/**/*.ts"],
+  "include": [
+    "scripts/session-management/hooks/**/*.ts",
+    "scripts/session-management/lib/**/*.ts"
+  ],
   "exclude": ["node_modules", "backup", "*.js"]
 }

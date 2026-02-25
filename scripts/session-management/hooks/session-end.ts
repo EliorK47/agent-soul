@@ -15,27 +15,39 @@ import {
   readSession,
   renameSessionFromTitle,
 } from '../lib/session-manager';
-import { getProjectSessionsDir, readStdinJson } from '../lib/utils';
+import {
+  getProjectSessionsDir,
+  getSessionsDirFromTranscript,
+  readStdinJson,
+} from '../lib/utils';
 
 interface SessionEndInput {
   session_id?: string;
   conversation_id?: string;
   workspace_roots?: string[];
+  transcript_path?: string;
 }
 
 async function main() {
   const data = await readStdinJson<SessionEndInput>();
   const sessionId = data.session_id || data.conversation_id || 'default';
-  const workspaceRoot = data.workspace_roots?.[0]
-    ? normalize(data.workspace_roots[0].replace(/^\/([a-z]:)/i, '$1'))
-    : null;
 
-  if (!workspaceRoot) {
-    process.exit(0);
+  let sessionsDir: string | null = null;
+
+  if (data.transcript_path) {
+    sessionsDir = getSessionsDirFromTranscript(data.transcript_path);
+  } else {
+    const workspaceRoot = data.workspace_roots?.[0]
+      ? normalize(data.workspace_roots[0].replace(/^\/([a-z]:)/i, '$1'))
+      : null;
+    if (workspaceRoot) {
+      sessionsDir = getProjectSessionsDir(workspaceRoot);
+    }
   }
 
-  // Derive sessions directory from workspace root
-  const sessionsDir = getProjectSessionsDir(workspaceRoot);
+  if (!sessionsDir) {
+    process.exit(0);
+  }
 
   // Find session by UUID (works even if file was renamed)
   const session = await findSession(sessionsDir, sessionId);

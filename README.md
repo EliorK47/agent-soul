@@ -84,7 +84,7 @@ powershell -c "irm bun.sh/install.ps1 | iex"
 In Cursor Agent chat:
 
 ```
-/plugin-add agent-soul
+/add-plugin agent-soul
 ```
 
 That's it. No additional setup needed -- hooks run directly on Bun with zero npm dependencies.
@@ -97,7 +97,7 @@ git clone https://github.com/EliorK47/agent-soul.git
 
 ## Project Structure
 
-```
+```bash
 .cursor-plugin/            Plugin manifest
 hooks/hooks.json           Hook configuration
 scripts/session-management/

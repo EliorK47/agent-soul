@@ -7,7 +7,8 @@
  */
 
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
+import { join } from 'node:path';
+import { getSessionsDirFromTranscript } from '../lib/utils';
 
 try {
   const raw = await Bun.stdin.text();
@@ -17,8 +18,7 @@ try {
 
   if (!transcriptPath || !sessionId) process.exit(0);
 
-  const projectDir = dirname(dirname(dirname(transcriptPath)));
-  const configDir = join(projectDir, 'sessions', 'config');
+  const configDir = join(getSessionsDirFromTranscript(transcriptPath), 'config');
   const counterFile = join(configDir, `tool-count-${sessionId}`);
 
   await mkdir(configDir, { recursive: true });
