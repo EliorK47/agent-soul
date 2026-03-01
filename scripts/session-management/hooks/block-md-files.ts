@@ -45,6 +45,7 @@ const allowedRootDocs = new Set([
   'contributing.md',
   'license.md',
 ]);
+const allowedLooseDocs = new Set(['skill.md']);
 
 const resolvedTarget = path.isAbsolute(filePath)
   ? path.resolve(filePath)
@@ -74,6 +75,7 @@ if (inCursorManagedDir) process.exit(0);
 
 // Allow key documentation files only at repo root
 if (relativeParts.length === 1 && allowedRootDocs.has(fileName)) process.exit(0);
+if (allowedLooseDocs.has(fileName)) process.exit(0);
 
 // Block: deny via stdout JSON
 console.log(
