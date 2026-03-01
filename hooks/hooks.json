@@ -1,7 +1,6 @@
 {
   "version": 1,
   "hooks": {
-    "beforeSubmitPrompt": [],
     "preToolUse": [
       {
         "matcher": "Shell|Read|Write|StrReplace|Grep|Glob|Delete|MCP:.*",
@@ -14,18 +13,6 @@
         "description": "Block creation of random .md files - keeps docs consolidated"
       }
     ],
-    "postToolUse": [],
-    "postToolUseFailure": [],
-    "beforeShellExecution": [],
-    "afterShellExecution": [],
-    "beforeMCPExecution": [],
-    "afterMCPExecution": [],
-    "beforeReadFile": [],
-    "afterFileEdit": [],
-    "beforeTabFileRead": [],
-    "afterTabFileEdit": [],
-    "afterAgentResponse": [],
-    "afterAgentThought": [],
     "sessionStart": [
       {
         "command": "bun scripts/session-management/hooks/session-start.ts",
@@ -56,7 +43,6 @@
         "command": "bun scripts/session-management/hooks/count-tool.ts",
         "description": "Increment tool call counter for milestone tracking"
       }
-    ],
-    "subagentStop": []
+    ]
   }
 }
