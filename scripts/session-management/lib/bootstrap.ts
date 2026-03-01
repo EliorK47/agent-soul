@@ -23,8 +23,9 @@ export interface WorkspacePaths {
 
 const MEMORY_TEMPLATE = `# Project Memory
 
-## Key Learnings
-- (none yet)
+## Topic Files
+
+_(none yet)_
 `;
 
 const SOUL_TEMPLATE = `# Who You Are

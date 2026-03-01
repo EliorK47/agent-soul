@@ -4,7 +4,7 @@
     "beforeSubmitPrompt": [],
     "preToolUse": [
       {
-        "matcher": "Shell|Read|Write|StrReplace|Grep|Glob|Task|Delete|CallMcpTool",
+        "matcher": "Shell|Read|Write|StrReplace|Grep|Glob|Delete|MCP:.*",
         "command": "bun scripts/session-management/hooks/count-tool.ts",
         "description": "Increment tool call counter for milestone tracking"
       },
@@ -51,7 +51,12 @@
         "loop_limit": 1
       }
     ],
-    "subagentStart": [],
+    "subagentStart": [
+      {
+        "command": "bun scripts/session-management/hooks/count-tool.ts",
+        "description": "Increment tool call counter for milestone tracking"
+      }
+    ],
     "subagentStop": []
   }
 }

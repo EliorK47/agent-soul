@@ -3,37 +3,44 @@ name: memory-management
 description: Read on sessions start. Manages persistent memory files across conversations. Use when recording learnings, updating MEMORY.md, creating topic files, or when the session-start hook injects memory context.
 ---
 
-# Memory Management
+# Auto Memory
 
-Memory persists across conversations via markdown files. The memory directory path is provided by the session-start hook. (e.g., `~/.cursor/projects/<project-id>/memory/MEMORY.md`).
+You have a persistent auto memory via markdown files. The memory directory path is provided by the session-start hook. (e.g., `~/.cursor/projects/<project-id>/memory/MEMORY.md`).
+Its contents persist across conversations.
+As you work, consult your memory files to build on previous experience.
 
-## MEMORY.md
+## How to save memories: <!-- markdownlint-disable-line MD026 -->
 
-- Always loaded into context - lines after 200 will be truncated, so keep it concise
-- Create separate topic files (e.g., `debugging.md`, `patterns.md`) for detailed notes and link to them from MEMORY.md
-- Record insights about problem constraints, strategies that worked or failed, and lessons learned
-- Update or remove memories that turn out to be wrong or outdated
 - Organize memory semantically by topic, not chronologically
 - Use the Write and Edit tools to update your memory files
+- `MEMORY.md` is always loaded into your conversation context — lines after
+200 will be truncated, so keep it concise
+- Create separate topic files (for example, `debugging.md`, `patterns.md`) for
+  detailed notes and link to them from MEMORY.md
+- Update or remove memories that turn out to be wrong or outdated
+- Do not write duplicate memories. First check if there is an existing memory
+you can update before writing a new one.
 
-```markdown
-## Key Learnings
-- Bun.file().exists() only works for files, not directories
-- See [hooks-patterns.md](hooks-patterns.md) for detailed hook architecture
-```
+## What to save: <!-- markdownlint-disable-line MD026 -->
 
-## How to Update
+- Stable patterns and conventions confirmed across multiple interactions
+- Key architectural decisions, important file paths, and project structure
+- User preferences for workflow, tools, and communication style
+- Solutions to recurring problems and debugging insights
 
-1. Read current MEMORY.md first
-2. Add or modify entries in place (semantic organization, not chronological)
-3. Remove entries that are wrong or outdated
-4. For detailed notes, create/update a topic file and link it
-5. Store durable cross-session learnings in memory; keep session-specific progress/logs in the session file
+## What NOT to save: <!-- markdownlint-disable-line MD026 -->
 
-## Template
+- Session-specific context (current task details, in-progress work, temporary
+  state)
+- Information that might be incomplete — verify against project docs before
+  writing
+- Anything that duplicates or contradicts higher-priority instructions
+- Speculative or unverified conclusions from reading a single file
 
-```markdown
-## [Topic]
-- [Concise insight or learning]
-- See [topic-file.md](topic-file.md) for details
-```
+## Explicit user requests: <!-- markdownlint-disable-line MD026 -->
+  
+- When the user asks you to remember something across sessions (for example, "always
+  use bun", "never auto-commit"), save it — no need to wait for multiple
+  interactions
+- When the user asks to forget or stop remembering something, remove the relevant
+  entries from your memory files
