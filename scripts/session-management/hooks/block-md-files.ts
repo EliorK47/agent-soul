@@ -77,11 +77,5 @@ if (inCursorManagedDir) process.exit(0);
 if (relativeParts.length === 1 && allowedRootDocs.has(fileName)) process.exit(0);
 if (allowedLooseDocs.has(fileName)) process.exit(0);
 
-// Block: deny via stdout JSON
-console.log(
-  JSON.stringify({
-    permission: 'deny',
-    user_message: `[Hook] Denied: Unnecessary documentation file.\nFile: ${filePath}. Use existing documentation files instead.`,
-  }),
-);
+console.log(`Unnecessary documentation file: ${filePath}. Use existing documentation files instead.`);
 process.exit(2);

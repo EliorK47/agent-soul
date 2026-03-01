@@ -34,14 +34,16 @@ Agent Soul runs through Cursor's hooks system. It activates automatically -- no 
 
 The core of Agent Soul. These run automatically at key points in the conversation lifecycle.
 
-| Hook | Script | What it does |
-|------|--------|--------------|
-| sessionStart | `session-start.ts` | Bootstrap workspace, create session file, inject context |
-| sessionEnd | `session-end.ts` | Clean up templates, auto-rename sessions from title |
-| preToolUse | `count-tool.ts` | Count tool calls for milestone tracking |
-| preToolUse | `block-md-files.ts` | Prevent agents from creating unsolicited documentation |
-| preCompact | `pre-compact.ts` | Flag compaction events for the stop hook |
-| stop | `suggest-compact.ts` | Prompt session/memory updates every 50 tool calls |
+
+| Hook         | Script               | What it does                                             |
+| ------------ | -------------------- | -------------------------------------------------------- |
+| sessionStart | `session-start.ts`   | Bootstrap workspace, create session file, inject context |
+| sessionEnd   | `session-end.ts`     | Clean up templates, auto-rename sessions from title      |
+| preToolUse   | `count-tool.ts`      | Count tool calls for milestone tracking                  |
+| preToolUse   | `block-md-files.ts`  | Prevent agents from creating unsolicited documentation   |
+| preCompact   | `pre-compact.ts`     | Flag compaction events for the stop hook                 |
+| stop         | `suggest-compact.ts` | Prompt session/memory updates every 50 tool calls        |
+
 
 ### Rules
 
@@ -79,12 +81,18 @@ powershell -c "irm bun.sh/install.ps1 | iex"
 
 ## Installation
 
-### Cursor Plugin Marketplace
+### Cursor Plugin
 
 In Cursor Agent chat:
 
 ```
-/add-plugin agent-soul
+/add-plugin https://github.com/EliorK47/agent-soul
+```
+
+Or paste the repo URL in **Settings > Plugins**:
+
+```
+https://github.com/EliorK47/agent-soul
 ```
 
 That's it. No additional setup needed -- hooks run directly on Bun with zero npm dependencies.

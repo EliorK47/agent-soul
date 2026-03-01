@@ -8,7 +8,8 @@
     "check": "bunx biome check scripts/session-management && bunx tsc --noEmit",
     "lint": "bunx biome check scripts/session-management",
     "lint:fix": "bunx biome check --write --unsafe scripts/session-management",
-    "typecheck": "bunx tsc --noEmit"
+    "typecheck": "bunx tsc --noEmit",
+    "sync-local": "rsync -a --delete .cursor-plugin assets hooks rules scripts skills ~/.cursor/plugins/local/agent-soul/"
   },
   "keywords": [
     "cursor",
