@@ -1,7 +1,7 @@
 {
   "name": "agent-soul",
   "displayName": "Agent Soul",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Persistent session tracking, memory management, and workflow automation for Cursor agents. Gives your AI assistant continuity across conversations.",
   "author": {
     "name": "EK47"
