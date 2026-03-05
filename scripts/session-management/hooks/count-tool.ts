@@ -18,7 +18,10 @@ try {
 
   if (!transcriptPath || !sessionId) process.exit(0);
 
-  const configDir = join(getSessionsDirFromTranscript(transcriptPath), 'config');
+  const configDir = join(
+    getSessionsDirFromTranscript(transcriptPath),
+    'config',
+  );
   const counterFile = join(configDir, `tool-count-${sessionId}`);
 
   await mkdir(configDir, { recursive: true });
