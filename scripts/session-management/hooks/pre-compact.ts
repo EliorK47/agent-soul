@@ -6,7 +6,11 @@
  */
 
 import { join } from 'node:path';
-import { getSessionsDirFromTranscript, readStdinJson } from '../lib/utils';
+import {
+  ensureDir,
+  getSessionsDirFromTranscript,
+  readStdinJson,
+} from '../lib/utils';
 
 interface PreCompactInput {
   conversation_id?: string;
@@ -35,13 +39,8 @@ async function main() {
   const sessionsDir = getSessionsDirFromTranscript(transcriptPath);
   const configDir = join(sessionsDir, 'config');
 
-  if (!(await Bun.file(sessionsDir).exists())) {
-    await Bun.write(join(sessionsDir, '.keep'), '');
-  }
-
-  if (!(await Bun.file(configDir).exists())) {
-    await Bun.write(join(configDir, '.keep'), '');
-  }
+  await ensureDir(sessionsDir);
+  await ensureDir(configDir);
 
   const flagFile = join(configDir, `cursor-compacted-${sessionId}`);
   const flagData: FlagData = {

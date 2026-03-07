@@ -3,6 +3,7 @@
  * Works on Windows, macOS, and Linux
  */
 
+import { mkdir, stat } from 'node:fs/promises';
 import { homedir, platform } from 'node:os';
 import { dirname, join } from 'node:path';
 
@@ -42,12 +43,78 @@ export async function getClaudeDir(): Promise<string> {
   const claudeDir = join(getHomeDir(), '.claude');
 
   // Prefer .cursor if it exists, otherwise use .claude
-  if (await Bun.file(cursorDir).exists()) {
-    return cursorDir;
+  try {
+    if ((await stat(cursorDir)).isDirectory()) {
+      return cursorDir;
+    }
+  } catch {
+    // Fall back to .claude if .cursor doesn't exist
   }
+
   return claudeDir;
 }
 
+// --- File Operations ---
+
+// Ensure a directory exists
+export async function ensureDir(dirPath: string): Promise<string> {
+  await mkdir(dirPath, { recursive: true });
+  return dirPath;
+}
+
+// Read a text file safely
+export async function readFile(filePath: string): Promise<string | null> {
+  try {
+    return await Bun.file(filePath).text();
+  } catch {
+    return null;
+  }
+}
+
+// Write a text file
+export async function writeFile(
+  filePath: string,
+  content: string,
+): Promise<void> {
+  await ensureDir(dirname(filePath));
+  await Bun.write(filePath, content);
+}
+
+// Count occurrences of a pattern in a file
+export async function countInFile(
+  filePath: string,
+  pattern: string | RegExp,
+): Promise<number> {
+  const content = await readFile(filePath);
+  if (content === null) return 0;
+
+  const regex = pattern instanceof RegExp ? pattern : new RegExp(pattern, 'g');
+  const matches = content.match(regex);
+  return matches ? matches.length : 0;
+}
+
+// --- System ---
+
+// Check if a command exists in PATH
+export async function commandExists(cmd: string): Promise<boolean> {
+  // Validate command name - only allow alphanumeric, dash, underscore, dot
+  if (!/^[a-zA-Z0-9_.-]+$/.test(cmd)) {
+    return false;
+  }
+
+  try {
+    // Add timeout to prevent hanging on Windows
+    const whichPromise = Bun.which(cmd);
+    const timeoutPromise = new Promise<null>((resolve) =>
+      setTimeout(() => resolve(null), 500),
+    );
+
+    const path = await Promise.race([whichPromise, timeoutPromise]);
+    return path !== null;
+  } catch {
+    return false;
+  }
+}
 // Get the learned skills directory
 export async function getLearnedSkillsDir(): Promise<string> {
   return join(await getClaudeDir(), 'skills', 'learned');
@@ -126,68 +193,4 @@ export function getTimeString(): string {
   const hours = String(now.getHours()).padStart(2, '0');
   const minutes = String(now.getMinutes()).padStart(2, '0');
   return `${hours}:${minutes}`;
-}
-
-// --- File Operations ---
-
-// Ensure a directory exists (create if not)
-export async function ensureDir(dirPath: string): Promise<string> {
-  if (!(await Bun.file(dirPath).exists())) {
-    await Bun.write(join(dirPath, '.keep'), '');
-  }
-  return dirPath;
-}
-
-// Read a text file safely
-export async function readFile(filePath: string): Promise<string | null> {
-  try {
-    return await Bun.file(filePath).text();
-  } catch {
-    return null;
-  }
-}
-
-// Write a text file
-export async function writeFile(
-  filePath: string,
-  content: string,
-): Promise<void> {
-  await ensureDir(dirname(filePath));
-  await Bun.write(filePath, content);
-}
-
-// Count occurrences of a pattern in a file
-export async function countInFile(
-  filePath: string,
-  pattern: string | RegExp,
-): Promise<number> {
-  const content = await readFile(filePath);
-  if (content === null) return 0;
-
-  const regex = pattern instanceof RegExp ? pattern : new RegExp(pattern, 'g');
-  const matches = content.match(regex);
-  return matches ? matches.length : 0;
-}
-
-// --- System ---
-
-// Check if a command exists in PATH
-export async function commandExists(cmd: string): Promise<boolean> {
-  // Validate command name - only allow alphanumeric, dash, underscore, dot
-  if (!/^[a-zA-Z0-9_.-]+$/.test(cmd)) {
-    return false;
-  }
-
-  try {
-    // Add timeout to prevent hanging on Windows
-    const whichPromise = Bun.which(cmd);
-    const timeoutPromise = new Promise<null>((resolve) =>
-      setTimeout(() => resolve(null), 500),
-    );
-
-    const path = await Promise.race([whichPromise, timeoutPromise]);
-    return path !== null;
-  } catch {
-    return false;
-  }
 }
