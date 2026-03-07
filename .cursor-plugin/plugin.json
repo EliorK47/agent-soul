@@ -9,7 +9,7 @@
   "homepage": "https://github.com/EliorK47/agent-soul",
   "repository": "https://github.com/EliorK47/agent-soul",
   "license": "MIT",
-  "logo": "assets/logo.png",
+  "logo": "./assets/logo.png",
   "keywords": [
     "session",
     "memory",
@@ -25,7 +25,7 @@
     "memory",
     "hooks"
   ],
-  "skills": "skills",
-  "rules": "rules",
-  "hooks": "hooks/hooks.json"
+  "skills": "./skills/",
+  "rules": "./rules/",
+  "hooks": "./hooks/hooks.json"
 }
