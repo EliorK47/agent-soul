@@ -6,7 +6,7 @@
  */
 
 import { join } from 'node:path';
-import { getHomeDir } from './utils';
+import { ensureDir, getHomeDir } from './utils';
 
 // --- Types ---
 
@@ -105,9 +105,9 @@ export async function ensureWorkspaceSetup(
   const soulFile = join(cursorDir, 'soul', 'SOUL.md');
   const userFile = join(cursorDir, 'user', 'USER.md');
 
-  // Ensure directories exist (Bun.write auto-creates parents)
-  await Bun.write(join(sessionsDir, '.keep'), '');
-  await Bun.write(join(memoryDir, '.keep'), '');
+  // Ensure directories exist
+  await ensureDir(sessionsDir);
+  await ensureDir(memoryDir);
 
   // Ensure starter files (only if missing)
   if (!(await Bun.file(memoryFile).exists())) {

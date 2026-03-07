@@ -7,7 +7,7 @@
 
 import { join, normalize } from 'node:path';
 import { ensureWorkspaceSetup } from '../lib/bootstrap';
-import { getPackageManager } from '../lib/package-manager';
+import { detectFromLockFile, getPackageManager } from '../lib/package-manager';
 import { initSession, listSessions } from '../lib/session-manager';
 import { getProjectSessionsDir, readStdinJson } from '../lib/utils';
 
@@ -106,24 +106,10 @@ async function main() {
         : 'unknown';
     }
   } catch {
-    const projectRoot = workspaceRoot;
-    if (
-      (await Bun.file(join(projectRoot, 'bun.lockb')).exists()) ||
-      (await Bun.file(join(projectRoot, 'bun.lock')).exists())
-    )
-      packageManagerInfo = 'bun';
-    else if (await Bun.file(join(projectRoot, 'pnpm-lock.yaml')).exists())
-      packageManagerInfo = 'pnpm';
-    else if (await Bun.file(join(projectRoot, 'yarn.lock')).exists())
-      packageManagerInfo = 'yarn';
-    else if (await Bun.file(join(projectRoot, 'package-lock.json')).exists())
-      packageManagerInfo = 'npm';
-    else if (await Bun.file(join(projectRoot, 'poetry.lock')).exists())
-      packageManagerInfo = 'poetry';
-    else if (await Bun.file(join(projectRoot, 'Pipfile.lock')).exists())
+    const fallbackPm = await detectFromLockFile(workspaceRoot);
+    if (fallbackPm) packageManagerInfo = fallbackPm;
+    else if (await Bun.file(join(workspaceRoot, 'Pipfile.lock')).exists())
       packageManagerInfo = 'pipenv';
-    else if (await Bun.file(join(projectRoot, 'requirements.txt')).exists())
-      packageManagerInfo = 'pip';
   }
 
   // === BUILD CONTEXT ===
