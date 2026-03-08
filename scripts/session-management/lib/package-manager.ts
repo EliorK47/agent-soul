@@ -27,7 +27,90 @@ export interface PackageManagerResult {
 
 export interface PackageManagerOptions {
   projectDir?: string;
-  fallbackOrder?: string[];
+  fallbackOrder?: PackageManagerName[];
+}
+
+const PACKAGE_MANAGER_NAMES = [
+  'npm',
+  'pnpm',
+  'yarn',
+  'bun',
+  'pip',
+  'poetry',
+] as const;
+
+export type PackageManagerName = (typeof PACKAGE_MANAGER_NAMES)[number];
+
+interface PackageManagerConfigFile {
+  packageManager?: string;
+  setAt?: string;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function isPackageManagerName(value: unknown): value is PackageManagerName {
+  return (
+    typeof value === 'string' &&
+    PACKAGE_MANAGER_NAMES.includes(value as PackageManagerName)
+  );
+}
+
+function readPackageManagerField(value: unknown): PackageManagerName | null {
+  return isPackageManagerName(value) ? value : null;
+}
+
+function getPackageManagerConfig(
+  packageManagerName: PackageManagerName,
+): PackageManagerConfig {
+  return PACKAGE_MANAGERS[packageManagerName];
+}
+
+async function readJsonFile(filePath: string): Promise<unknown | null> {
+  try {
+    return await Bun.file(filePath).json();
+  } catch {
+    return null;
+  }
+}
+
+async function readProjectPackageManagerConfig(
+  projectDir: string,
+): Promise<PackageManagerName | null> {
+  const configPaths = [
+    join(projectDir, '.cursor', 'package-manager.json'),
+    join(projectDir, '.claude', 'package-manager.json'),
+  ];
+
+  for (const configPath of configPaths) {
+    const config = parseConfigFile(await readJsonFile(configPath));
+    const packageManagerName = readPackageManagerField(config?.packageManager);
+    if (packageManagerName) {
+      return packageManagerName;
+    }
+  }
+
+  return null;
+}
+
+function parseConfigFile(value: unknown): PackageManagerConfigFile | null {
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  const packageManager = value.packageManager;
+  const setAt = value.setAt;
+
+  if (packageManager !== undefined && typeof packageManager !== 'string') {
+    return null;
+  }
+
+  if (setAt !== undefined && typeof setAt !== 'string') {
+    return null;
+  }
+
+  return { packageManager, setAt };
 }
 
 // Package manager definitions
@@ -92,9 +175,7 @@ export const PACKAGE_MANAGERS = {
     buildCmd: 'poetry build',
     devCmd: 'poetry run python -m flask run',
   },
-} as const;
-
-export type PackageManagerName = keyof typeof PACKAGE_MANAGERS;
+} as const satisfies Record<PackageManagerName, PackageManagerConfig>;
 
 // Priority order for detection (JS first, then Python)
 export const DETECTION_PRIORITY: PackageManagerName[] = [
@@ -112,17 +193,9 @@ async function getConfigPath(): Promise<string> {
 }
 
 // Load saved package manager configuration
-async function loadConfig(): Promise<{
-  packageManager?: string;
-  setAt?: string;
-} | null> {
+async function loadConfig(): Promise<PackageManagerConfigFile | null> {
   const configPath = await getConfigPath();
-
-  try {
-    return await Bun.file(configPath).json();
-  } catch {
-    return null;
-  }
+  return parseConfigFile(await readJsonFile(configPath));
 }
 
 // Save package manager configuration
@@ -170,26 +243,21 @@ export async function detectFromPackageJson(
 ): Promise<PackageManagerName | null> {
   const packageJsonPath = join(projectDir, 'package.json');
 
-  try {
-    const pkg = await Bun.file(packageJsonPath).json();
-    if (pkg.packageManager) {
-      // Format: "pnpm@8.6.0" or just "pnpm"
-      const pmName = pkg.packageManager.split('@')[0];
-      if (pmName in PACKAGE_MANAGERS) {
-        return pmName as PackageManagerName;
-      }
-    }
-  } catch {
-    // Invalid or missing package.json
+  const pkg = await readJsonFile(packageJsonPath);
+  if (!isRecord(pkg) || typeof pkg.packageManager !== 'string') {
+    return null;
   }
-  return null;
+
+  // Format: "pnpm@8.6.0" or just "pnpm"
+  const [pmName] = pkg.packageManager.split('@');
+  return readPackageManagerField(pmName);
 }
 
 // Get available package managers (installed on system)
 export async function getAvailablePackageManagers(): Promise<string[]> {
   const available: string[] = [];
 
-  for (const pmName of Object.keys(PACKAGE_MANAGERS)) {
+  for (const pmName of PACKAGE_MANAGER_NAMES) {
     if (await commandExists(pmName)) {
       available.push(pmName);
     }
@@ -218,41 +286,23 @@ export async function getPackageManager(
   // 1. Check environment variable
   const envPm =
     process.env.CURSOR_PACKAGE_MANAGER || process.env.CLAUDE_PACKAGE_MANAGER;
-  if (envPm && envPm in PACKAGE_MANAGERS) {
+  if (isPackageManagerName(envPm)) {
     return {
       name: envPm,
-      config: PACKAGE_MANAGERS[envPm as PackageManagerName],
+      config: getPackageManagerConfig(envPm),
       source: 'environment',
     };
   }
 
   // 2. Check project-specific config
-  let projectConfigPath = join(projectDir, '.cursor', 'package-manager.json');
-
-  try {
-    const config = await Bun.file(projectConfigPath).json();
-    if (config.packageManager && config.packageManager in PACKAGE_MANAGERS) {
-      return {
-        name: config.packageManager,
-        config: PACKAGE_MANAGERS[config.packageManager as PackageManagerName],
-        source: 'project-config',
-      };
-    }
-  } catch {
-    // Try .claude directory
-    projectConfigPath = join(projectDir, '.claude', 'package-manager.json');
-    try {
-      const config = await Bun.file(projectConfigPath).json();
-      if (config.packageManager && config.packageManager in PACKAGE_MANAGERS) {
-        return {
-          name: config.packageManager,
-          config: PACKAGE_MANAGERS[config.packageManager as PackageManagerName],
-          source: 'project-config',
-        };
-      }
-    } catch {
-      // No valid config found
-    }
+  const projectPackageManager =
+    await readProjectPackageManagerConfig(projectDir);
+  if (projectPackageManager) {
+    return {
+      name: projectPackageManager,
+      config: getPackageManagerConfig(projectPackageManager),
+      source: 'project-config',
+    };
   }
 
   // 3. Check package.json packageManager field
@@ -277,15 +327,13 @@ export async function getPackageManager(
 
   // 5. Check global user preference
   const globalConfig = await loadConfig();
-  if (
-    globalConfig?.packageManager &&
-    globalConfig.packageManager in PACKAGE_MANAGERS
-  ) {
-    const pmConfig =
-      PACKAGE_MANAGERS[globalConfig.packageManager as PackageManagerName];
+  const globalPackageManager = readPackageManagerField(
+    globalConfig?.packageManager,
+  );
+  if (globalPackageManager) {
     return {
-      name: globalConfig.packageManager,
-      config: pmConfig,
+      name: globalPackageManager,
+      config: getPackageManagerConfig(globalPackageManager),
       source: 'global-config',
     };
   }
@@ -296,7 +344,7 @@ export async function getPackageManager(
     if (available.includes(pmName)) {
       return {
         name: pmName,
-        config: PACKAGE_MANAGERS[pmName as PackageManagerName],
+        config: getPackageManagerConfig(pmName),
         source: 'fallback',
       };
     }

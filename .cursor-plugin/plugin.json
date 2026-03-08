@@ -4,12 +4,14 @@
   "version": "0.1.2",
   "description": "Persistent session tracking, memory management, and workflow automation for Cursor agents. Gives your AI assistant continuity across conversations.",
   "author": {
-    "name": "EK47"
+    "name": "47",
+    "email": "plugins@47.com"
+
   },
   "homepage": "https://github.com/EliorK47/agent-soul",
   "repository": "https://github.com/EliorK47/agent-soul",
   "license": "MIT",
-  "logo": "./assets/logo.png",
+  "logo": ".assets/avatar.png",
   "keywords": [
     "session",
     "memory",

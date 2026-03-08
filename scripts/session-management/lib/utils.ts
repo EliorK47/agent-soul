@@ -5,7 +5,7 @@
 
 import { mkdir, stat } from 'node:fs/promises';
 import { homedir, platform } from 'node:os';
-import { dirname, join } from 'node:path';
+import { dirname, join, parse, sep } from 'node:path';
 
 // Platform detection
 export const isWindows = platform() === 'win32';
@@ -18,15 +18,22 @@ export const isLinux = platform() === 'linux';
  * Read and parse JSON from stdin with BOM stripping.
  * Shared by all hooks to avoid duplicated boilerplate.
  */
-export async function readStdinJson<T = unknown>(): Promise<T> {
+function isJsonObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+export async function readStdinJson<
+  T extends object = Record<string, unknown>,
+>(): Promise<Partial<T>> {
   let raw = '';
   for await (const chunk of Bun.stdin.stream()) {
     raw += new TextDecoder().decode(chunk);
   }
   try {
-    return JSON.parse(raw.replace(/^\uFEFF/, ''));
+    const parsed: unknown = JSON.parse(raw.replace(/^\uFEFF/, ''));
+    return isJsonObject(parsed) ? (parsed as Partial<T>) : {};
   } catch {
-    return {} as T;
+    return {};
   }
 }
 
@@ -126,7 +133,6 @@ export async function getLearnedSkillsDir(): Promise<string> {
  * Cross-platform: handles Windows drive letters and Unix absolute paths.
  */
 function deriveProjectId(workspaceRoot: string): string {
-  const { sep, parse } = require('node:path') as typeof import('path');
   const userHome = getHomeDir();
   const globalCursorPath = userHome ? join(userHome, '.cursor') : '';
   const isGlobalCursorFolder =
