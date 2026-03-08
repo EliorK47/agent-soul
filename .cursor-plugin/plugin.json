@@ -14,6 +14,5 @@
   "logo": "assets/avatar.png",
   "keywords": ["session", "memory", "workflow", "agent", "context", "persistence"],
   "skills": "./skills/",
-  "rules": "./rules/",
   "hooks": "./hooks/hooks.json"
 }
