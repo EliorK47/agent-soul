@@ -11,7 +11,7 @@
   "homepage": "https://github.com/EliorK47/agent-soul",
   "repository": "https://github.com/EliorK47/agent-soul",
   "license": "MIT",
-  "logo": ".assets/avatar.png",
+  "logo": "assets/avatar.png",
   "keywords": [
     "session",
     "memory",
